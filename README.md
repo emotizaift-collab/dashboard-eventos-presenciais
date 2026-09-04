@@ -234,6 +234,7 @@ Depois de mexer em qualquer coisa, clique em **Salvar alterações**.
 | Aviso de **"registros sem data válida"** | A aba de compradores não tem data na coluna configurada. Ajuste a *Coluna da data* em Ajustes avançados. |
 | A venda nova **não apareceu na hora** | O aviso da planilha falhou. Clique em *Atualizar agora* para destravar e refaça o Passo 4. |
 | O painel demora ~30s para abrir | Normal no plano grátis do Render depois de um tempo parado. |
+| **Na dúvida se o que está no ar é a versão nova** | Abra `SEU-ENDERECO/api/health` no navegador. Ele mostra `build`, com o commit e a data em que aquele código foi compilado. Serve para saber se um deploy chegou, em vez de adivinhar. |
 
 ---
 

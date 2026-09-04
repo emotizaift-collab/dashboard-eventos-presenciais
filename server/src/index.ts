@@ -17,8 +17,26 @@ const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN ?? '';
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
+/** De qual commit e de quando e o codigo que esta rodando agora. */
+function buildInfo(): Record<string, string> {
+  try {
+    const arquivo = path.join(ROOT, 'dist', 'build-info.json');
+    if (fs.existsSync(arquivo)) {
+      return JSON.parse(fs.readFileSync(arquivo, 'utf8')) as Record<string, string>;
+    }
+  } catch {
+    /* build-info e opcional: rodando direto do TypeScript ele nao existe */
+  }
+  return { compiladoEm: 'desconhecido', commit: 'desconhecido', branch: 'desconhecido' };
+}
+
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, versao: store.getVersion(), demo: !hasCredentials() });
+  res.json({
+    ok: true,
+    versao: store.getVersion(),
+    demo: !hasCredentials(),
+    build: buildInfo(),
+  });
 });
 
 /** Estado geral: usado pela interface para montar os seletores. */
