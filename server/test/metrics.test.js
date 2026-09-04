@@ -125,7 +125,7 @@ test('o resumo mede o tamanho do que esta ficando de fora', () => {
   assert.equal(r.comprasSemEvento, 1);
   assert.equal(r.comprasSemTipo, 1, 'so conta linha com texto no tipo, nao celula vazia');
   assert.equal(r.custoSemEvento, 250);
-  assert.ok(metrics.naoClassificado.tiposIngresso.includes('CAD DA MARIA'));
+  assert.deepEqual(metrics.naoClassificado.tiposIngresso, [{ valor: 'CAD DA MARIA', linhas: 1 }]);
 });
 
 test('acompanhante nao entra no faturamento, nos participantes nem nas vendas do grafico', () => {
@@ -167,4 +167,39 @@ test('avisa quando ha acompanhante demais para os ingressos vendidos', () => {
   };
   const { warnings } = computeMetrics(config, demais, filtro);
   assert.ok(warnings.some((w) => w.includes('linha duplicada')));
+});
+
+test('os nao classificados vem com o numero de linhas, e nao so o valor distinto', () => {
+  const repetido = {
+    ...dataset,
+    buyers: [
+      ...dataset.buyers,
+      { ...compra('2026-09-01', null), rawTicketType: 'Vip' },
+      { ...compra('2026-09-01', null), rawTicketType: 'Vip' },
+      { ...compra('2026-09-02', null), rawTicketType: 'Vip' },
+      { ...compra('2026-09-02', null), rawTicketType: 'Inteira' },
+    ],
+  };
+  const { metrics } = computeMetrics(config, repetido, filtro);
+  // Ordenado do maior para o menor: 3 linhas "Vip" pesam mais que 1 "Inteira".
+  assert.deepEqual(metrics.naoClassificado.tiposIngresso, [
+    { valor: 'Vip', linhas: 3 },
+    { valor: 'Inteira', linhas: 1 },
+  ]);
+  assert.equal(metrics.naoClassificado.resumo.comprasSemTipo, 4);
+});
+
+test('campanha nao reconhecida mostra quanto dinheiro esta parado nela', () => {
+  const comGasto = {
+    ...dataset,
+    traffic: [
+      ...dataset.traffic,
+      { date: '2026-09-01', campaign: '[XX] outro produto', editionId: null, lineId: null, cost: 100 },
+      { date: '2026-09-02', campaign: '[XX] outro produto', editionId: null, lineId: null, cost: 250.5 },
+    ],
+  };
+  const { metrics } = computeMetrics(config, comGasto, filtro);
+  assert.deepEqual(metrics.naoClassificado.campanhas, [
+    { valor: '[XX] outro produto', linhas: 2, custo: 350.5 },
+  ]);
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { AppConfig, Metrics } from '../../shared/types';
+import type { AppConfig, Metrics, ValorNaoClassificado } from '../../shared/types';
 import { api } from './api';
 
 interface Props {
@@ -154,6 +154,7 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
               <tr>
                 <th>Valor encontrado</th>
                 <th>Onde apareceu</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Tamanho</th>
                 <th style={{ width: 340 }}>Pertence a</th>
               </tr>
             </thead>
@@ -324,6 +325,8 @@ function CampoNovoApelido({ aoAdicionar }: { aoAdicionar: (valor: string) => voi
 interface Sugestao {
   valor: string;
   origem: string;
+  linhas: number;
+  custo?: number;
 }
 
 function LinhaSugestao({
@@ -340,6 +343,15 @@ function LinhaSugestao({
     <tr>
       <td><code className="mono">{sugestao.valor}</code></td>
       <td style={{ color: '#93a0bb' }}>{sugestao.origem}</td>
+      <td style={{ color: '#93a0bb', whiteSpace: 'nowrap' }}>
+        {sugestao.linhas.toLocaleString('pt-BR')} linha{sugestao.linhas === 1 ? '' : 's'}
+        {sugestao.custo !== undefined && sugestao.custo > 0 && (
+          <>
+            <br />
+            {sugestao.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </>
+        )}
+      </td>
       <td>
         {pronto ? (
           <span style={{ color: '#2fbf71', fontSize: 13 }}>Adicionado — lembre de salvar</span>
@@ -402,7 +414,7 @@ function ResumoDoQueFalta({ resumo }: { resumo: Metrics['naoClassificado']['resu
 
 function juntarSugestoes(nc: Metrics['naoClassificado'] | null): Sugestao[] {
   if (!nc) return [];
-  const grupos: Array<[string[], string]> = [
+  const grupos: Array<[ValorNaoClassificado[], string]> = [
     [nc.campanhas, 'Tráfego pago'],
     [nc.eventosLeads, 'Planilha de leads'],
     [nc.eventosCompradores, 'Planilha de compradores'],
@@ -410,11 +422,11 @@ function juntarSugestoes(nc: Metrics['naoClassificado'] | null): Sugestao[] {
   const vistos = new Set<string>();
   const saida: Sugestao[] = [];
   for (const [valores, origem] of grupos) {
-    for (const valor of valores) {
-      const chave = valor.toLowerCase();
+    for (const item of valores) {
+      const chave = item.valor.toLowerCase();
       if (vistos.has(chave)) continue;
       vistos.add(chave);
-      saida.push({ valor, origem });
+      saida.push({ valor: item.valor, origem, linhas: item.linhas, custo: item.custo });
     }
   }
   return saida.slice(0, 60);

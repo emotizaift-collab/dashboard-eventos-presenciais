@@ -7,7 +7,9 @@
  *  - Retorno = Faturamento Liquido - Total Custo Campanha
  *  - Participantes = 1x individual + 2x duplo + 3x triplo + embaixadores + convidados
  */
-import type { AppConfig, DataSet, DailyPoint, Metrics, TicketKind } from '../../shared/types.js';
+import type {
+  AppConfig, DataSet, DailyPoint, Metrics, TicketKind, ValorNaoClassificado,
+} from '../../shared/types.js';
 
 export interface MetricsFilter {
   lineId: string;
@@ -167,8 +169,34 @@ export function listDays(from: string, to: string): string[] {
 
 /** Valores que nao casaram com nenhum apelido — mostrados na tela de mapeamento. */
 function collectUnmatched(data: DataSet): Metrics['naoClassificado'] {
-  const take = (values: string[]) =>
-    [...new Set(values.filter((value) => value.trim() !== ''))].slice(0, 50);
+  // Contar linhas, nao valores distintos: "27 nomes diferentes" nao diz se sao
+  // 27 linhas ou 300, e e o numero de linhas que mede o dado que esta sumindo.
+  const take = (values: string[]): ValorNaoClassificado[] => {
+    const contagem = new Map<string, number>();
+    for (const value of values) {
+      const limpo = value.trim();
+      if (!limpo) continue;
+      contagem.set(limpo, (contagem.get(limpo) ?? 0) + 1);
+    }
+    return [...contagem.entries()]
+      .map(([valor, linhas]) => ({ valor, linhas }))
+      .sort((a, b) => b.linhas - a.linhas)
+      .slice(0, 50);
+  };
+
+  const takeCampanhas = (rows: DataSet['traffic']): ValorNaoClassificado[] => {
+    const agrupado = new Map<string, { linhas: number; custo: number }>();
+    for (const row of rows) {
+      const nome = row.campaign.trim();
+      if (!nome) continue;
+      const atual = agrupado.get(nome) ?? { linhas: 0, custo: 0 };
+      agrupado.set(nome, { linhas: atual.linhas + 1, custo: atual.custo + row.cost });
+    }
+    return [...agrupado.entries()]
+      .map(([valor, dados]) => ({ valor, linhas: dados.linhas, custo: round2(dados.custo) }))
+      .sort((a, b) => (b.custo ?? 0) - (a.custo ?? 0))
+      .slice(0, 50);
+  };
 
   const leadsIgnorados = data.leads.filter((row) => !row.lineId && row.rawEvent.trim() !== '');
   const comprasSemEvento = data.buyers.filter((row) => !row.lineId && row.rawEvent.trim() !== '');
@@ -181,7 +209,7 @@ function collectUnmatched(data: DataSet): Metrics['naoClassificado'] {
     eventosLeads: take(leadsIgnorados.map((row) => row.rawEvent)),
     eventosCompradores: take(comprasSemEvento.map((row) => row.rawEvent)),
     tiposIngresso: take(comprasSemTipo.map((row) => row.rawTicketType)),
-    campanhas: take(custoSemEvento.map((row) => row.campaign)),
+    campanhas: takeCampanhas(custoSemEvento),
     resumo: {
       leadsIgnorados: leadsIgnorados.length,
       comprasSemEvento: comprasSemEvento.length,

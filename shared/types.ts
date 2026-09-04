@@ -101,6 +101,15 @@ export interface DailyPoint {
   custo: number;
 }
 
+/** Um valor nao reconhecido e o tamanho do que ele representa. */
+export interface ValorNaoClassificado {
+  valor: string;
+  /** Quantas linhas da planilha tem esse valor. */
+  linhas: number;
+  /** Soma em reais, so para campanhas de trafego. */
+  custo?: number;
+}
+
 export interface Metrics {
   custoCampanha: number;
   faturamentoLiquido: number;
@@ -113,10 +122,10 @@ export interface Metrics {
   serie: DailyPoint[];
   /** Valores que o painel nao conseguiu classificar — ajudam a ajustar o mapeamento. */
   naoClassificado: {
-    eventosLeads: string[];
-    eventosCompradores: string[];
-    tiposIngresso: string[];
-    campanhas: string[];
+    eventosLeads: ValorNaoClassificado[];
+    eventosCompradores: ValorNaoClassificado[];
+    tiposIngresso: ValorNaoClassificado[];
+    campanhas: ValorNaoClassificado[];
     /** Quanto cada problema custa em dado perdido. Valor distinto engana; o que importa e o tamanho. */
     resumo: {
       leadsIgnorados: number;
