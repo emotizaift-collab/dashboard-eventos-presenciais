@@ -118,3 +118,41 @@ export function resolveColumnIndex(spec: string, header: string[]): number {
   }
   return columnLetterToIndex(spec);
 }
+
+export interface TabLookup {
+  /** A aba existe com essa grafia exata. */
+  exata: boolean;
+  /** O Google achou a aba (ele ignora maiusculas/minusculas, mas nao acentos). */
+  encontrada: boolean;
+  /** Nome real da aba, quando encontrada por aproximacao. */
+  nomeReal: string | null;
+  /** Aba mais parecida, quando nao encontrada — ajuda a corrigir a grafia. */
+  sugestao: string | null;
+}
+
+/**
+ * Compara o nome de aba configurado com os nomes reais da planilha.
+ *
+ * A API do Google aceita diferenca de maiusculas/minusculas, mas NAO aceita
+ * diferenca de acento nem de singular/plural. Por isso a checagem tem tres
+ * niveis: grafia exata, mesma coisa ignorando caixa, e o palpite mais proximo.
+ */
+export function lookupTab(configurada: string, abas: string[]): TabLookup {
+  const exata = abas.includes(configurada);
+  if (exata) return { exata: true, encontrada: true, nomeReal: configurada, sugestao: null };
+
+  const alvoCaixa = configurada.toLowerCase();
+  const porCaixa = abas.find((aba) => aba.toLowerCase() === alvoCaixa);
+  if (porCaixa) return { exata: false, encontrada: true, nomeReal: porCaixa, sugestao: porCaixa };
+
+  // Ultimo recurso: ignorar acentos e pontuacao para sugerir a aba mais parecida.
+  const alvo = normalizeText(configurada);
+  const porTexto = abas.find((aba) => normalizeText(aba) === alvo);
+  if (porTexto) return { exata: false, encontrada: false, nomeReal: null, sugestao: porTexto };
+
+  const parecida =
+    abas.find((aba) => normalizeText(aba).startsWith(alvo.slice(0, 12))) ??
+    abas.find((aba) => alvo.startsWith(normalizeText(aba).slice(0, 12))) ??
+    null;
+  return { exata: false, encontrada: false, nomeReal: null, sugestao: parecida };
+}

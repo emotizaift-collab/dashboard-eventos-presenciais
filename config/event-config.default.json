@@ -4,13 +4,13 @@
   "sources": {
     "leads": {
       "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
-      "tab": "Interessados Eventos Presenciais",
+      "tab": "INTERESSADOS EVENTOS PRESENCIAIS",
       "headerRow": 1,
       "columns": { "date": "A", "event": "auto:Evento" }
     },
     "buyers": {
       "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
-      "tab": "Cópia Compradores Presenciais",
+      "tab": "COPIA COMPRADORES PRESENCIAL",
       "headerRow": 1,
       "columns": { "date": "A", "event": "C", "ticketType": "H", "ambassador": "I" }
     },

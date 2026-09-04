@@ -7,6 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { store } from './store.js';
 import { ROOT } from './config.js';
 import { computeMetrics, listDays } from './metrics.js';
+import { lookupTab } from './normalize.js';
 import { hasCredentials, listTabs, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, MetricsResponse } from '../../shared/types.js';
 
@@ -119,13 +120,21 @@ app.get('/api/diagnostics', async (_req, res) => {
         vistos.set(id, `erro: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    resultado.planilhas = ids.map(([fonte, id, aba]) => ({
-      fonte,
-      spreadsheetId: id,
-      abaConfigurada: aba,
-      abasEncontradas: vistos.get(id),
-      abaExiste: Array.isArray(vistos.get(id)) ? (vistos.get(id) as string[]).includes(aba) : null,
-    }));
+    resultado.planilhas = ids.map(([fonte, id, aba]) => {
+      const abas = vistos.get(id);
+      const busca = Array.isArray(abas) ? lookupTab(aba, abas) : null;
+      return {
+        fonte,
+        spreadsheetId: id,
+        abaConfigurada: aba,
+        abasEncontradas: abas,
+        // O Google ignora maiusculas/minusculas, mas nao ignora acentos.
+        abaExiste: busca ? busca.encontrada : null,
+        grafiaExata: busca ? busca.exata : null,
+        nomeRealDaAba: busca ? busca.nomeReal : null,
+        sugestao: busca && !busca.encontrada ? busca.sugestao : null,
+      };
+    });
   }
 
   res.json(resultado);
