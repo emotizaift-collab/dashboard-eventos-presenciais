@@ -67,6 +67,24 @@ export function computeMetrics(
     );
   }
 
+  // Compra com a coluna do evento em BRANCO nao pertence a evento nenhum, entao
+  // nao aparece em nenhum filtro nem na lista de "nomes nao reconhecidos" (que
+  // so lista texto que existe). Sem este aviso ela some sem deixar rastro, o que
+  // e o pior caso: uma venda de verdade que nunca entra em nenhum numero.
+  const semEventoEmBranco = data.buyers.filter(
+    (row) => row.rawEvent.trim() === '' && (row.ticketKind !== null || row.rawTicketType.trim() !== ''),
+  );
+  if (semEventoEmBranco.length > 0) {
+    const linhas = semEventoEmBranco.map((row) => row.linha).sort((a, b) => a - b);
+    const mostradas = linhas.slice(0, 15).join(', ');
+    const resto = linhas.length > 15 ? ` e mais ${linhas.length - 15}` : '';
+    warnings.push(
+      `${semEventoEmBranco.length} compra(s) estao com a coluna do evento em branco e por isso nao entram ` +
+        `em nenhum evento, em nenhum periodo. Se forem de um dos seus eventos, e faturamento que nao esta ` +
+        `sendo contado. Na aba de compradores, preencha o evento nas linhas: ${mostradas}${resto}.`,
+    );
+  }
+
   const traffic = data.traffic.filter(
     (row) => matchesFilter(filter, row.lineId, row.editionId) && inRange(row.date, filter.from, filter.to),
   );

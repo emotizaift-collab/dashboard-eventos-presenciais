@@ -259,3 +259,30 @@ test('mudar o preco base move os tipos calculados e nao mexe no VIP', () => {
 });
 
 function round(v) { return Math.round(v * 100) / 100; }
+
+test('compra sem o nome do evento e denunciada, nao descartada em silencio', () => {
+  // Coluna do evento vazia: a linha nao casa com nenhum evento e tambem nao
+  // aparece em "nomes nao reconhecidos", porque nao ha texto para listar.
+  const orfa = {
+    linha: 88, date: '2026-09-01', rawEvent: '   ', editionId: null, lineId: null,
+    ticketKind: null, rawTicketType: 'individual', ambassador: '',
+  };
+  const comOrfa = { ...dataset, buyers: [...dataset.buyers, orfa] };
+  const { metrics, warnings } = computeMetrics(config, comOrfa, filtro);
+
+  const aviso = warnings.find((w) => w.includes('coluna do evento em branco'));
+  assert.ok(aviso, 'uma venda invisivel precisa ser denunciada');
+  assert.match(aviso, /linhas: 88/);
+
+  // E continua fora das contas: o aviso e para a pessoa agir, nao um chute.
+  assert.equal(metrics.naoClassificado.eventosCompradores.length, 0);
+});
+
+test('linha totalmente vazia nao vira alarme falso', () => {
+  const vazia = {
+    linha: 99, date: null, rawEvent: '', editionId: null, lineId: null,
+    ticketKind: null, rawTicketType: '', ambassador: '',
+  };
+  const { warnings } = computeMetrics(config, { ...dataset, buyers: [...dataset.buyers, vazia] }, filtro);
+  assert.ok(!warnings.some((w) => w.includes('coluna do evento em branco')));
+});
