@@ -33,8 +33,24 @@ antigos, separados) e por **intervalo de datas**.
 
 ### Como as contas são feitas
 
-- Ingresso individual custa **R$ 91,16** (dá para mudar esse valor na tela de Configuração)
-- Ingresso duplo = 2 × R$ 91,16 = R$ 182,32 · Triplo = 3 × R$ 91,16 = R$ 273,48
+- Cada tipo de ingresso tem seu preço, editável na tela de Configuração:
+
+  | Tipo | Preço | Cadeiras |
+  |---|---|---|
+  | Individual | R$ 91,16 (calculado) | 1 |
+  | Duplo | R$ 182,32 (calculado) | 2 |
+  | Triplo | R$ 273,48 (calculado) | 3 |
+  | VIP | R$ 297,00 | 1 |
+  | VIP 2ª cadeira | R$ 297,00 | 1 |
+  | Inteira | R$ 297,00 | 1 |
+  | Convite embaixador | grátis | 0 |
+  | Acompanhante | não é venda | 0 |
+
+- **Preço "calculado"** quer dizer preço base × cadeiras. Mudar o preço base move
+  individual, duplo e triplo de uma vez; VIP e Inteira têm valor próprio e não são
+  afetados.
+- **A 2ª cadeira do VIP é uma venda separada** (confirmado com a IFT), diferente do
+  acompanhante de duplo, que não é.
 - **Convite de embaixador é gratuito** e não entra no faturamento
 - **Retorno** = Faturamento Líquido − Total Custo Campanha
 - **Participantes** = individuais + (duplos × 2) + (triplos × 3) + embaixadores + convidados

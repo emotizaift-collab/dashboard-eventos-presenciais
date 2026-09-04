@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AppConfig } from '../../shared/types.js';
+import type { AppConfig, TicketTypeConfig } from '../../shared/types.js';
 
 /**
  * Raiz do projeto. Sobe os diretorios ate achar o package.json, para funcionar
@@ -91,6 +91,32 @@ export function validateConfig(config: AppConfig): AppConfig {
     }
   }
 
+  config.ticketTypes = migrarTiposDeIngresso(config.ticketTypes);
+  if (config.ticketTypes.length === 0) {
+    throw new Error('e preciso ter pelo menos um tipo de ingresso');
+  }
+  const tipoIds = new Set<string>();
+  for (const tipo of config.ticketTypes) {
+    if (!tipo.id || !tipo.label) throw new Error('todo tipo de ingresso precisa de id e nome');
+    if (tipoIds.has(tipo.id)) throw new Error(`tipo de ingresso duplicado: ${tipo.id}`);
+    tipoIds.add(tipo.id);
+    if (!Array.isArray(tipo.aliases)) tipo.aliases = [];
+    tipo.aliases = tipo.aliases.map((alias) => String(alias).trim()).filter(Boolean);
+    if (typeof tipo.cadeiras !== 'number' || tipo.cadeiras < 0 || !Number.isInteger(tipo.cadeiras)) {
+      throw new Error(`"${tipo.label}": cadeiras precisa ser um numero inteiro de 0 para cima`);
+    }
+    if (tipo.preco !== null && (typeof tipo.preco !== 'number' || tipo.preco < 0)) {
+      throw new Error(`"${tipo.label}": preco precisa ser um numero de 0 para cima, ou vazio`);
+    }
+    tipo.contaComoVenda = Boolean(tipo.contaComoVenda);
+    if (tipo.contaComoVenda && tipo.cadeiras === 0) {
+      throw new Error(
+        `"${tipo.label}" conta como venda mas ocupa 0 cadeiras. ` +
+          'Um ingresso vendido precisa levar pelo menos uma pessoa ao evento.',
+      );
+    }
+  }
+
   for (const key of ['leads', 'buyers', 'traffic'] as const) {
     const source = config.sources?.[key];
     if (!source?.spreadsheetId || !source?.tab) {
@@ -100,4 +126,27 @@ export function validateConfig(config: AppConfig): AppConfig {
   }
 
   return config;
+}
+
+/**
+ * Aceita o formato antigo de ticketTypes, um objeto {id: [apelidos]} sem preco
+ * nem numero de cadeiras. Existiu antes de o VIP aparecer no dado real; uma
+ * configuracao ja salva pela interface ainda pode estar nesse formato.
+ */
+function migrarTiposDeIngresso(valor: unknown): TicketTypeConfig[] {
+  if (Array.isArray(valor)) return valor as TicketTypeConfig[];
+  if (!valor || typeof valor !== 'object') return [];
+
+  const CADEIRAS: Record<string, number> = { individual: 1, duplo: 2, triplo: 3 };
+  return Object.entries(valor as Record<string, string[]>).map(([id, aliases]) => {
+    const cadeiras = CADEIRAS[id] ?? (id === 'cortesia' || id === 'acompanhante' ? 0 : 1);
+    return {
+      id,
+      label: id.charAt(0).toUpperCase() + id.slice(1),
+      aliases: Array.isArray(aliases) ? aliases : [],
+      cadeiras,
+      preco: cadeiras === 0 ? 0 : null,
+      contaComoVenda: cadeiras > 0,
+    };
+  });
 }

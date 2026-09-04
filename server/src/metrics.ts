@@ -8,8 +8,14 @@
  *  - Participantes = 1x individual + 2x duplo + 3x triplo + embaixadores + convidados
  */
 import type {
-  AppConfig, DataSet, DailyPoint, Metrics, TicketKind, ValorNaoClassificado,
+  AppConfig, DataSet, DailyPoint, Metrics, ValorNaoClassificado,
 } from '../../shared/types.js';
+import { precoDoTipo } from '../../shared/types.js';
+
+/** Tipos que representam a 2a/3a pessoa de um ingresso ja pago. */
+function ehAcompanhante(id: string): boolean {
+  return id.includes('acompanhante');
+}
 
 export interface MetricsFilter {
   lineId: string;
@@ -61,9 +67,26 @@ export function computeMetrics(
     (row) => matchesFilter(filter, row.lineId, row.editionId) && inRange(row.date, filter.from, filter.to),
   );
 
-  const individual = buyers.filter((row) => row.ticketKind === 'individual').length;
-  const duplo = buyers.filter((row) => row.ticketKind === 'duplo').length;
-  const triplo = buyers.filter((row) => row.ticketKind === 'triplo').length;
+  // Uma contagem por tipo configurado. A lista de tipos e editavel pela
+  // interface, entao nada aqui pode depender de um id especifico existir.
+  const contagem = new Map<string, number>();
+  for (const row of buyers) {
+    if (row.ticketKind === null) continue;
+    contagem.set(row.ticketKind, (contagem.get(row.ticketKind) ?? 0) + 1);
+  }
+
+  const ingressos = config.ticketTypes
+    .filter((tipo) => tipo.contaComoVenda)
+    .map((tipo) => {
+      const quantidade = contagem.get(tipo.id) ?? 0;
+      return {
+        id: tipo.id,
+        label: tipo.label,
+        quantidade,
+        faturamento: round2(quantidade * precoDoTipo(tipo, price)),
+        participantes: quantidade * tipo.cadeiras,
+      };
+    });
 
   const comEmbaixador = buyers.filter((row) => row.ambassador.trim() !== '');
   const convidados = comEmbaixador.length;
@@ -71,16 +94,21 @@ export function computeMetrics(
     comEmbaixador.map((row) => row.ambassador.trim().toLowerCase()),
   ).size;
 
-  // Cada ingresso duplo gera 1 acompanhante e cada triplo gera 2. A equipe
-  // preenche esses nomes a mao, ligando para o comprador, entao a diferenca
-  // aponta exatamente quantos telefonemas ainda faltam.
-  const acompanhantes = buyers.filter((row) => row.ticketKind === 'acompanhante').length;
-  const acompanhantesEsperados = duplo + triplo * 2;
+  // Cada ingresso que leva mais de uma pessoa gera acompanhante: o duplo pede 1
+  // nome, o triplo pede 2. A equipe preenche isso a mao, ligando para o
+  // comprador, entao a diferenca aponta quantos telefonemas ainda faltam.
+  const acompanhantes = config.ticketTypes
+    .filter((tipo) => !tipo.contaComoVenda && tipo.cadeiras === 0 && ehAcompanhante(tipo.id))
+    .reduce((total, tipo) => total + (contagem.get(tipo.id) ?? 0), 0);
+  const acompanhantesEsperados = config.ticketTypes
+    .filter((tipo) => tipo.contaComoVenda && tipo.cadeiras > 1)
+    .reduce((total, tipo) => total + (contagem.get(tipo.id) ?? 0) * (tipo.cadeiras - 1), 0);
+
   if (acompanhantes < acompanhantesEsperados) {
     warnings.push(
       `Faltam ${acompanhantesEsperados - acompanhantes} nome(s) de acompanhante a cadastrar: ` +
-        `${duplo} ingresso(s) duplo(s) e ${triplo} triplo(s) pedem ${acompanhantesEsperados} acompanhante(s), ` +
-        `e so ${acompanhantes} foi(ram) preenchido(s). Isso nao afeta o faturamento.`,
+        `os ingressos vendidos comportam ${acompanhantesEsperados} acompanhante(s) e ` +
+        `${acompanhantes} foi(ram) preenchido(s). Isso nao afeta o faturamento.`,
     );
   } else if (acompanhantes > acompanhantesEsperados) {
     warnings.push(
@@ -91,11 +119,12 @@ export function computeMetrics(
 
   const custoCampanha = round2(traffic.reduce((total, row) => total + row.cost, 0));
   const faturamentoLiquido = round2(
-    individual * price + duplo * price * 2 + triplo * price * 3,
+    ingressos.reduce((total, item) => total + item.faturamento, 0),
   );
   const retorno = round2(faturamentoLiquido - custoCampanha);
   const leadsTotal = leads.length;
-  const participantes = individual + duplo * 2 + triplo * 3 + embaixadores + convidados;
+  const cadeirasVendidas = ingressos.reduce((total, item) => total + item.participantes, 0);
+  const participantes = cadeirasVendidas + embaixadores + convidados;
   const custoPorLead = leadsTotal > 0 ? round2(custoCampanha / leadsTotal) : null;
 
   return {
@@ -106,9 +135,9 @@ export function computeMetrics(
       leadsTotal,
       participantes,
       custoPorLead,
-      ingressos: { individual, duplo, triplo },
+      ingressos,
       embaixador: { embaixadores, convidados, total: embaixadores + convidados },
-      serie: buildSeries(filter, leads, buyers, traffic),
+      serie: buildSeries(config, filter, leads, buyers, traffic),
       naoClassificado: collectUnmatched(data),
     },
     warnings,
@@ -117,6 +146,7 @@ export function computeMetrics(
 
 /** Uma linha por dia do intervalo, mesmo nos dias em que nao houve movimento. */
 function buildSeries(
+  config: AppConfig,
   filter: MetricsFilter,
   leads: DataSet['leads'],
   buyers: DataSet['buyers'],
@@ -124,11 +154,13 @@ function buildSeries(
 ): DailyPoint[] {
   const days = listDays(filter.from, filter.to);
   const leadsByDay = countByDay(leads.map((row) => row.date));
-  const TIPOS_PAGOS: TicketKind[] = ['individual', 'duplo', 'triplo'];
+  // Venda e so o que a configuracao marca como venda: cortesia e acompanhante
+  // ficam de fora, senao a linha do acompanhante viraria uma venda inexistente.
+  const tiposPagos = new Set(
+    config.ticketTypes.filter((tipo) => tipo.contaComoVenda).map((tipo) => tipo.id),
+  );
   const vendasByDay = countByDay(
-    buyers
-      .filter((row) => row.ticketKind !== null && TIPOS_PAGOS.includes(row.ticketKind))
-      .map((row) => row.date),
+    buyers.filter((row) => row.ticketKind !== null && tiposPagos.has(row.ticketKind)).map((row) => row.date),
   );
   const custoByDay = new Map<string, number>();
   for (const row of traffic) {

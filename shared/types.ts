@@ -1,13 +1,35 @@
 /** Tipos compartilhados entre o servidor e a interface. */
 
+/** Id de um tipo de ingresso configurado (ex.: 'individual', 'vip', 'acompanhante'). */
+export type TicketKind = string;
+
 /**
- * 'acompanhante' e a segunda (ou terceira) pessoa de um ingresso duplo/triplo.
- * Quem compra nao consegue cadastrar o nome do acompanhante na hora, entao a
- * equipe liga depois e registra numa linha propria, marcada "CAD DA <comprador>".
- * O ingresso duplo JA contabiliza essas cadeiras e esse valor: contar a linha do
- * acompanhante de novo dobraria o faturamento e os participantes.
+ * Um tipo de ingresso, editavel pela interface.
+ *
+ * cadeiras = quantas pessoas o ingresso leva ao evento. Vale 0 em dois casos:
+ *  - 'cortesia': o convidado ja e contado pela coluna do embaixador;
+ *  - 'acompanhante': a segunda pessoa de um duplo. Quem compra nao consegue
+ *    cadastrar o nome dela na hora, entao a equipe liga depois e registra numa
+ *    linha propria ("CAD DA <comprador>"). O ingresso duplo JA contabilizou
+ *    essa cadeira e esse valor; contar de novo dobraria tudo.
+ *
+ * preco = null significa "ticketPrice x cadeiras", entao mudar o preco base
+ * ajusta individual, duplo e triplo de uma vez. Um numero fixa o valor daquele
+ * tipo, para ingressos com preco proprio (VIP, inteira).
  */
-export type TicketKind = 'individual' | 'duplo' | 'triplo' | 'cortesia' | 'acompanhante';
+export interface TicketTypeConfig {
+  id: string;
+  label: string;
+  aliases: string[];
+  cadeiras: number;
+  preco: number | null;
+  contaComoVenda: boolean;
+}
+
+/** Quanto vale um ingresso desse tipo, em reais. */
+export function precoDoTipo(tipo: TicketTypeConfig, precoBase: number): number {
+  return tipo.preco === null ? precoBase * tipo.cadeiras : tipo.preco;
+}
 
 export interface ColumnMapLeads {
   date: string;
@@ -52,7 +74,7 @@ export interface AppConfig {
     buyers: SourceConfig<ColumnMapBuyers>;
     traffic: SourceConfig<ColumnMapTraffic>;
   };
-  ticketTypes: Record<TicketKind, string[]>;
+  ticketTypes: TicketTypeConfig[];
   eventLines: EventLine[];
 }
 
@@ -117,7 +139,14 @@ export interface Metrics {
   leadsTotal: number;
   participantes: number;
   custoPorLead: number | null;
-  ingressos: { individual: number; duplo: number; triplo: number };
+  /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */
+  ingressos: Array<{
+    id: string;
+    label: string;
+    quantidade: number;
+    faturamento: number;
+    participantes: number;
+  }>;
   embaixador: { embaixadores: number; convidados: number; total: number };
   serie: DailyPoint[];
   /** Valores que o painel nao conseguiu classificar — ajudam a ajustar o mapeamento. */

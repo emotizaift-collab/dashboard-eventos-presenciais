@@ -175,8 +175,9 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
       <div className="config-secao">
         <h2>Preço do ingresso</h2>
         <p className="explica">
-          Valor de um ingresso individual. O duplo conta como duas vezes esse valor e o triplo como três.
-          Convite de embaixador é gratuito e não entra no faturamento.
+          Valor de referência de uma cadeira. Os tipos que estão com o preço em branco na seção abaixo
+          usam este valor multiplicado pelo número de cadeiras — mudar aqui ajusta individual, duplo e
+          triplo de uma vez. Ingressos com valor próprio (como o VIP) não são afetados.
         </p>
         <div className="campo">
           <label htmlFor="preco">Preço em reais</label>
@@ -193,6 +194,133 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
             }
           />
         </div>
+      </div>
+
+      <div className="config-secao">
+        <h2>Tipos de ingresso e preços</h2>
+        <p className="explica">
+          Cada linha é um tipo de ingresso que aparece na planilha. <strong>Preço vazio</strong> significa
+          "use o preço base acima multiplicado pelas cadeiras" — é assim que individual, duplo e triplo
+          acompanham automaticamente qualquer mudança no preço base. Preencha o preço só nos ingressos que
+          têm valor próprio, como o VIP.
+        </p>
+        <p className="explica">
+          <strong>Cadeiras</strong> é quantas pessoas o ingresso leva ao evento. Vale <strong>0</strong> em
+          dois casos especiais: o convite de embaixador (o convidado já é contado pela coluna do embaixador)
+          e o acompanhante (a segunda pessoa do duplo, cuja cadeira já foi contada no ingresso do comprador).
+          Por isso esses dois não contam como venda.
+        </p>
+
+        {rascunho.ticketTypes.map((tipo, indice) => (
+          <div className="linha-evento" key={tipo.id}>
+            <header>
+              <h4>{tipo.label}</h4>
+              <span style={{ fontSize: 12, color: tipo.contaComoVenda ? '#2fbf71' : '#93a0bb' }}>
+                {tipo.contaComoVenda
+                  ? `vale ${precoVisivel(tipo, rascunho.ticketPrice)}`
+                  : 'não entra no faturamento'}
+              </span>
+            </header>
+
+            <div className="filtros" style={{ margin: 0, background: 'transparent', border: 0, padding: 0 }}>
+              <div className="campo">
+                <label>Nome que aparece no painel</label>
+                <input
+                  value={tipo.label}
+                  onChange={(e) =>
+                    atualizar((d) => {
+                      d.ticketTypes[indice].label = e.target.value;
+                    })
+                  }
+                />
+              </div>
+              <div className="campo">
+                <label>Preço próprio (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="usa o preço base"
+                  value={tipo.preco === null ? '' : tipo.preco}
+                  onChange={(e) =>
+                    atualizar((d) => {
+                      const texto = e.target.value.trim();
+                      d.ticketTypes[indice].preco = texto === '' ? null : Number(texto);
+                    })
+                  }
+                  style={{ minWidth: 150 }}
+                />
+              </div>
+              <div className="campo">
+                <label>Cadeiras</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={tipo.cadeiras}
+                  onChange={(e) =>
+                    atualizar((d) => {
+                      d.ticketTypes[indice].cadeiras = Math.max(0, Number(e.target.value) || 0);
+                    })
+                  }
+                  style={{ minWidth: 90 }}
+                />
+              </div>
+              <div className="campo">
+                <label>Conta como venda?</label>
+                <select
+                  value={tipo.contaComoVenda ? 'sim' : 'nao'}
+                  onChange={(e) =>
+                    atualizar((d) => {
+                      d.ticketTypes[indice].contaComoVenda = e.target.value === 'sim';
+                    })
+                  }
+                  style={{ minWidth: 110 }}
+                >
+                  <option value="sim">Sim</option>
+                  <option value="nao">Não</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="edicao" style={{ marginTop: 12, marginBottom: 0 }}>
+              <div className="edicao-titulo">
+                <strong>Como aparece escrito na planilha</strong>
+              </div>
+              <div className="apelidos">
+                {tipo.aliases.map((apelido) => (
+                  <span className="apelido" key={apelido}>
+                    {apelido}
+                    <button
+                      type="button"
+                      title="Remover"
+                      onClick={() =>
+                        atualizar((d) => {
+                          d.ticketTypes[indice].aliases = d.ticketTypes[indice].aliases.filter(
+                            (a) => a !== apelido,
+                          );
+                        })
+                      }
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <CampoNovoApelido
+                  aoAdicionar={(valor) =>
+                    atualizar((d) => {
+                      const limpo = valor.trim();
+                      const lista = d.ticketTypes[indice].aliases;
+                      if (limpo && !lista.some((a) => a.toLowerCase() === limpo.toLowerCase())) {
+                        lista.push(limpo);
+                      }
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="config-secao">
@@ -448,6 +576,13 @@ function rotuloColuna(coluna: string): string {
     cost: 'Coluna do custo',
   };
   return mapa[coluna] ?? coluna;
+}
+
+/** Mostra o valor efetivo do tipo, calculado ou fixo. */
+function precoVisivel(tipo: AppConfig['ticketTypes'][number], precoBase: number): string {
+  const valor = tipo.preco === null ? precoBase * tipo.cadeiras : tipo.preco;
+  const reais = valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return tipo.preco === null ? `${reais} (calculado)` : reais;
 }
 
 function clonar<T>(valor: T): T {

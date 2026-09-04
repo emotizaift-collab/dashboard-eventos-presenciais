@@ -1,37 +1,156 @@
 {
-  "$comentario": "Configuracao padrao do painel. A interface grava as alteracoes em data/event-config.json; este arquivo continua sendo o ponto de restauracao.",
+  "$comentario": "Configuracao padrao do painel. A interface grava as alteracoes em data/event-config.json; este arquivo continua sendo o ponto de restauracao. Em ticketTypes, preco null significa ticketPrice x cadeiras; cadeiras 0 = a pessoa e contada por outra via (convidado de embaixador) ou ja foi contada no ingresso do comprador (acompanhante).",
   "ticketPrice": 91.16,
   "sources": {
     "leads": {
       "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
       "tab": "INTERESSADOS EVENTOS PRESENCIAIS",
       "headerRow": 1,
-      "columns": { "date": "A", "event": "auto:Evento" }
+      "columns": {
+        "date": "A",
+        "event": "auto:Evento"
+      }
     },
     "buyers": {
       "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
       "tab": "COPIA COMPRADORES PRESENCIAL",
       "headerRow": 1,
-      "columns": { "date": "A", "event": "C", "ticketType": "H", "ambassador": "I" }
+      "columns": {
+        "date": "A",
+        "event": "C",
+        "ticketType": "H",
+        "ambassador": "I"
+      }
     },
     "traffic": {
       "spreadsheetId": "1e1Uf7GyBiP1pMCBJGl12PldPYQSsQtuFGqmaCIHcw48",
       "tab": "PLAN PARA DASH",
       "headerRow": 1,
-      "columns": { "date": "A", "campaign": "D", "cost": "F" }
+      "columns": {
+        "date": "A",
+        "campaign": "D",
+        "cost": "F"
+      }
     }
   },
-  "ticketTypes": {
-    "individual": ["individual", "ingresso individual", "1 pessoa", "uma pessoa"],
-    "duplo": ["cadeira dupla", "duas pessoas", "ingresso duplo", "duplo", "dupla", "2 pessoas"],
-    "triplo": ["ingresso triplo", "tres pessoas", "triplo", "tripla", "3 pessoas"],
-    "cortesia": ["convite embaixador", "embaixador", "convite", "cortesia"],
-    "acompanhante": [
-      "cad", "cad da", "cad de", "cad do", "cad das", "cad dos",
-      "cadeira da", "cadeira de", "cadeira do",
-      "acompanhante", "dupla de", "dupla da", "dupla do"
-    ]
-  },
+  "ticketTypes": [
+    {
+      "id": "individual",
+      "label": "Individual",
+      "cadeiras": 1,
+      "preco": null,
+      "contaComoVenda": true,
+      "aliases": [
+        "individual",
+        "ingresso individual",
+        "1 pessoa",
+        "uma pessoa"
+      ]
+    },
+    {
+      "id": "duplo",
+      "label": "Duplo",
+      "cadeiras": 2,
+      "preco": null,
+      "contaComoVenda": true,
+      "aliases": [
+        "cadeira dupla",
+        "duas pessoas",
+        "ingresso duplo",
+        "duplo",
+        "dupla",
+        "2 pessoas"
+      ]
+    },
+    {
+      "id": "triplo",
+      "label": "Triplo",
+      "cadeiras": 3,
+      "preco": null,
+      "contaComoVenda": true,
+      "aliases": [
+        "ingresso triplo",
+        "tres pessoas",
+        "triplo",
+        "tripla",
+        "3 pessoas"
+      ]
+    },
+    {
+      "id": "vip",
+      "label": "VIP",
+      "cadeiras": 1,
+      "preco": 297.0,
+      "contaComoVenda": true,
+      "aliases": [
+        "vip",
+        "ingresso vip"
+      ]
+    },
+    {
+      "id": "vip-segunda-cadeira",
+      "label": "VIP 2ª cadeira",
+      "cadeiras": 1,
+      "preco": 297.0,
+      "contaComoVenda": true,
+      "aliases": [
+        "vip segunda cadeira",
+        "vip 2 cadeira",
+        "segunda cadeira vip"
+      ]
+    },
+    {
+      "id": "inteira",
+      "label": "Inteira",
+      "cadeiras": 1,
+      "preco": 297.0,
+      "contaComoVenda": true,
+      "aliases": [
+        "inteira",
+        "inteiro",
+        "ingresso inteiro"
+      ]
+    },
+    {
+      "id": "cortesia",
+      "label": "Convite embaixador",
+      "cadeiras": 0,
+      "preco": 0.0,
+      "contaComoVenda": false,
+      "aliases": [
+        "convite embaixador",
+        "embaixador",
+        "convite",
+        "cortesia"
+      ]
+    },
+    {
+      "id": "acompanhante",
+      "label": "Acompanhante (2ª pessoa do duplo)",
+      "cadeiras": 0,
+      "preco": 0.0,
+      "contaComoVenda": false,
+      "aliases": [
+        "cad",
+        "cad da",
+        "cad de",
+        "cad do",
+        "cad das",
+        "cad dos",
+        "cade",
+        "cade da",
+        "cade de",
+        "cade do",
+        "cadeira da",
+        "cadeira de",
+        "cadeira do",
+        "acompanhante",
+        "dupla de",
+        "dupla da",
+        "dupla do"
+      ]
+    }
+  ],
   "eventLines": [
     {
       "id": "dai",
@@ -41,7 +160,11 @@
           "id": "dai-atual",
           "label": "Dinâmicas de Alto Impacto",
           "current": true,
-          "aliases": ["DAI", "Dinâmicas de Alto Impacto", "Dinamicas de Alto Impacto"]
+          "aliases": [
+            "DAI",
+            "Dinâmicas de Alto Impacto",
+            "Dinamicas de Alto Impacto"
+          ]
         },
         {
           "id": "dai-historico",
@@ -68,7 +191,10 @@
           "id": "anima-atual",
           "label": "ANIMA Day",
           "current": true,
-          "aliases": ["ANIMADAY", "ANIMA Day"]
+          "aliases": [
+            "ANIMADAY",
+            "ANIMA Day"
+          ]
         },
         {
           "id": "anima-historico",

@@ -43,12 +43,13 @@ export function compileMatcher(config: AppConfig): CompiledMatcher {
   aliases.sort((a, b) => b.alias.length - a.alias.length);
 
   const ticketTypes: Array<{ kind: TicketKind; alias: string }> = [];
-  for (const kind of Object.keys(config.ticketTypes) as TicketKind[]) {
-    for (const alias of config.ticketTypes[kind]) {
+  for (const tipo of config.ticketTypes) {
+    for (const alias of tipo.aliases) {
       const normalized = normalizeText(alias);
-      if (normalized) ticketTypes.push({ kind, alias: normalized });
+      if (normalized) ticketTypes.push({ kind: tipo.id, alias: normalized });
     }
   }
+  // Alias mais longo primeiro: "vip segunda cadeira" tem de ganhar de "vip".
   ticketTypes.sort((a, b) => b.alias.length - a.alias.length);
 
   return { aliases, ticketTypes };

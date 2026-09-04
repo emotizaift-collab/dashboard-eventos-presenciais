@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { computeMetrics, listDays } from '../../dist/server/src/metrics.js';
 
+/** Quantidade de um tipo de ingresso no resultado. */
+const qtd = (metrics, id) => metrics.ingressos.find((t) => t.id === id)?.quantidade ?? 0;
+
 const config = JSON.parse(fs.readFileSync(new URL('../../config/event-config.default.json', import.meta.url), 'utf8'));
 
 const lead = (date, edition = 'dai-atual') => ({ date, rawEvent: 'DAI', editionId: edition, lineId: 'dai' });
@@ -35,7 +38,9 @@ const filtro = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-0
 
 test('calcula faturamento pelo preco do ingresso, sem contar cortesias', () => {
   const { metrics } = computeMetrics(config, dataset, filtro);
-  assert.deepEqual(metrics.ingressos, { individual: 2, duplo: 1, triplo: 1 });
+  assert.equal(qtd(metrics, 'individual'), 2);
+  assert.equal(qtd(metrics, 'duplo'), 1);
+  assert.equal(qtd(metrics, 'triplo'), 1);
   // 2 x 91,16 + 1 x 182,32 + 1 x 273,48
   assert.equal(metrics.faturamentoLiquido, 638.12);
 });
@@ -91,8 +96,8 @@ test('filtrar por edicao separa o nome atual do historico', () => {
   };
   const soAtual = computeMetrics(config, misto, { ...filtro, editionId: 'dai-atual' });
   const soHistorico = computeMetrics(config, misto, { ...filtro, editionId: 'dai-historico' });
-  assert.equal(soAtual.metrics.ingressos.individual, 2);
-  assert.equal(soHistorico.metrics.ingressos.individual, 1);
+  assert.equal(qtd(soAtual.metrics, 'individual'), 2);
+  assert.equal(qtd(soHistorico.metrics, 'individual'), 1);
 });
 
 test('avisa quando ha compradores sem data valida', () => {
@@ -144,6 +149,7 @@ test('acompanhante nao entra no faturamento, nos participantes nem nas vendas do
   assert.equal(com.faturamentoLiquido, base.faturamentoLiquido, 'faturamento nao pode dobrar');
   assert.equal(com.participantes, base.participantes, 'a cadeira do duplo ja foi contada');
   assert.deepEqual(com.ingressos, base.ingressos);
+  assert.equal(qtd(com, 'acompanhante'), 0, 'acompanhante nao aparece entre os tipos vendidos');
   assert.deepEqual(
     com.serie.map((p) => p.vendas),
     base.serie.map((p) => p.vendas),
@@ -203,3 +209,46 @@ test('campanha nao reconhecida mostra quanto dinheiro esta parado nela', () => {
     { valor: '[XX] outro produto', linhas: 2, custo: 350.5 },
   ]);
 });
+
+test('VIP usa o preco proprio, e nao o preco base', () => {
+  const comVip = {
+    ...dataset,
+    buyers: [
+      ...dataset.buyers,
+      compra('2026-09-01', 'vip'),
+      compra('2026-09-01', 'inteira'),
+      compra('2026-09-02', 'vip-segunda-cadeira'),
+    ],
+  };
+  const base = computeMetrics(config, dataset, filtro).metrics;
+  const com = computeMetrics(config, comVip, filtro).metrics;
+
+  // 3 ingressos de R$ 297,00 a mais
+  assert.equal(round(com.faturamentoLiquido - base.faturamentoLiquido), 891);
+  assert.equal(qtd(com, 'vip'), 1);
+  assert.equal(qtd(com, 'inteira'), 1);
+  assert.equal(qtd(com, 'vip-segunda-cadeira'), 1);
+  // Cada um leva 1 pessoa
+  assert.equal(com.participantes - base.participantes, 3);
+});
+
+test('a 2a cadeira do VIP e venda separada: entra no faturamento e no grafico', () => {
+  const comVip = { ...dataset, buyers: [...dataset.buyers, compra('2026-09-01', 'vip-segunda-cadeira')] };
+  const base = computeMetrics(config, dataset, filtro).metrics;
+  const com = computeMetrics(config, comVip, filtro).metrics;
+  assert.equal(round(com.faturamentoLiquido - base.faturamentoLiquido), 297);
+  assert.equal(com.serie[0].vendas, base.serie[0].vendas + 1);
+});
+
+test('mudar o preco base move os tipos calculados e nao mexe no VIP', () => {
+  const outroPreco = { ...config, ticketPrice: 100 };
+  const comVip = { ...dataset, buyers: [...dataset.buyers, compra('2026-09-01', 'vip')] };
+  const { metrics } = computeMetrics(outroPreco, comVip, filtro);
+  const porId = Object.fromEntries(metrics.ingressos.map((t) => [t.id, t]));
+  assert.equal(porId.individual.faturamento, 200, '2 individuais a R$ 100');
+  assert.equal(porId.duplo.faturamento, 200, '1 duplo = 2 cadeiras a R$ 100');
+  assert.equal(porId.triplo.faturamento, 300);
+  assert.equal(porId.vip.faturamento, 297, 'preco proprio nao acompanha o preco base');
+});
+
+function round(v) { return Math.round(v * 100) / 100; }

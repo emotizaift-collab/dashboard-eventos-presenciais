@@ -115,3 +115,18 @@ test('acompanhante nao rouba a classificacao de um ingresso de verdade', () => {
   assert.equal(matchTicketKind(matcher, 'individual'), 'individual');
   assert.equal(matchTicketKind(matcher, 'ingresso triplo'), 'triplo');
 });
+
+test('os tipos vistos no dado real da IFT sao classificados certo', () => {
+  const casos = [
+    ['Vip', 'vip'],
+    ['VIP', 'vip'],
+    // O alias mais longo tem de ganhar de "vip", senao a 2a cadeira viraria um VIP comum.
+    ['VIP - SEGUNDA CADEIRA', 'vip-segunda-cadeira'],
+    ['Inteira', 'inteira'],
+    // "CADE DE" e a grafia com um erro de digitacao de "CAD DE".
+    ['CADE DE CARLOS CABREIRA', 'acompanhante'],
+  ];
+  for (const [texto, esperado] of casos) {
+    assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
+  }
+});

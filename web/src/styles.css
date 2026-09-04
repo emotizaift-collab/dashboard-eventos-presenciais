@@ -99,10 +99,11 @@ body {
   border-radius: 12px; padding: 16px 18px;
 }
 .bloco h3 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texto-fraco); }
-.linhas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.linhas { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
 .linha-item { background: var(--painel-2); border-radius: 9px; padding: 12px; text-align: center; }
 .linha-item .n { font-size: 22px; font-weight: 700; }
-.linha-item .t { font-size: 11px; color: var(--texto-fraco); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+.linha-item .t { font-size: 11px; color: var(--texto-fraco); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.3; }
+.linha-item .extra { font-size: 11px; color: var(--verde); margin-top: 5px; font-variant-numeric: tabular-nums; }
 
 .grafico { background: var(--painel); border: 1px solid var(--borda); border-radius: 12px; padding: 18px; }
 .grafico h3 { margin: 0 0 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texto-fraco); }

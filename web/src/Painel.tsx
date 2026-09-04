@@ -37,9 +37,14 @@ export function Painel({ dados }: Props) {
         <div className="bloco">
           <h3>Tipos de ingresso</h3>
           <div className="linhas">
-            <Item n={m.ingressos.individual} t="Individual" />
-            <Item n={m.ingressos.duplo} t="Duplo" />
-            <Item n={m.ingressos.triplo} t="Triplo" />
+            {m.ingressos.map((tipo) => (
+              <Item
+                key={tipo.id}
+                n={tipo.quantidade}
+                t={tipo.label}
+                extra={tipo.quantidade > 0 ? dinheiro(tipo.faturamento) : undefined}
+              />
+            ))}
           </div>
         </div>
         <div className="bloco">
@@ -99,11 +104,12 @@ function Card({
   );
 }
 
-function Item({ n, t }: { n: number; t: string }) {
+function Item({ n, t, extra }: { n: number; t: string; extra?: string }) {
   return (
     <div className="linha-item">
       <div className="n">{numero(n)}</div>
       <div className="t">{t}</div>
+      {extra && <div className="extra">{extra}</div>}
     </div>
   );
 }
