@@ -1,0 +1,16 @@
+# Configuração pronta para publicar no Render (render.com).
+# Veja o passo a passo no README.md, seção "Passo 3 — Colocar o painel no ar".
+services:
+  - type: web
+    name: painel-eventos-ift
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: WEBHOOK_TOKEN
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false

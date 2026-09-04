@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+
+# Credenciais do Google — NUNCA versionar
+credentials/
+*service-account*.json
+google-credentials.json
+
+# Configuracao de eventos editada pela interface (gerada em runtime)
+data/event-config.json

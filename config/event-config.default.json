@@ -1,0 +1,82 @@
+{
+  "$comentario": "Configuracao padrao do painel. A interface grava as alteracoes em data/event-config.json; este arquivo continua sendo o ponto de restauracao.",
+  "ticketPrice": 91.16,
+  "sources": {
+    "leads": {
+      "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
+      "tab": "Interessados Eventos Presenciais",
+      "headerRow": 1,
+      "columns": { "date": "A", "event": "auto:Evento" }
+    },
+    "buyers": {
+      "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
+      "tab": "Cópia Compradores Presenciais",
+      "headerRow": 1,
+      "columns": { "date": "A", "event": "C", "ticketType": "H", "ambassador": "I" }
+    },
+    "traffic": {
+      "spreadsheetId": "1e1Uf7GyBiP1pMCBJGl12PldPYQSsQtuFGqmaCIHcw48",
+      "tab": "PLAN PARA DASH",
+      "headerRow": 1,
+      "columns": { "date": "A", "campaign": "D", "cost": "F" }
+    }
+  },
+  "ticketTypes": {
+    "individual": ["individual", "ingresso individual", "1 pessoa", "uma pessoa"],
+    "duplo": ["cadeira dupla", "duas pessoas", "ingresso duplo", "duplo", "dupla", "2 pessoas"],
+    "triplo": ["ingresso triplo", "tres pessoas", "triplo", "tripla", "3 pessoas"],
+    "cortesia": ["convite embaixador", "embaixador", "convite", "cortesia"]
+  },
+  "eventLines": [
+    {
+      "id": "dai",
+      "label": "Dinâmicas de Alto Impacto",
+      "editions": [
+        {
+          "id": "dai-atual",
+          "label": "Dinâmicas de Alto Impacto",
+          "current": true,
+          "aliases": ["DAI", "Dinâmicas de Alto Impacto", "Dinamicas de Alto Impacto"]
+        },
+        {
+          "id": "dai-historico",
+          "label": "Palestrante de Alto Impacto (histórico)",
+          "current": false,
+          "aliases": [
+            "PAI",
+            "PAIAOVIVO",
+            "PAI 147$",
+            "DINAMICASAOVIVO",
+            "Palestrante de Alto Impacto",
+            "Palestrante ao Vivo",
+            "Dinâmicas ao Vivo"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anima",
+      "label": "ANIMA Day",
+      "editions": [
+        {
+          "id": "anima-atual",
+          "label": "ANIMA Day",
+          "current": true,
+          "aliases": ["ANIMA", "ANIMADAY", "ANIMA Day"]
+        },
+        {
+          "id": "anima-historico",
+          "label": "Day Training (histórico)",
+          "current": false,
+          "aliases": [
+            "Day Training Sist",
+            "Day Training",
+            "DAYTRAINING",
+            "Dinâmicas Sistêmicas INFINITAS – O Treinamento",
+            "Dinamicas Sistemicas INFINITAS - O Treinamento"
+          ]
+        }
+      ]
+    }
+  ]
+}
