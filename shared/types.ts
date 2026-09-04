@@ -83,6 +83,8 @@ export interface DataSet {
   traffic: TrafficRow[];
   fetchedAt: string;
   warnings: string[];
+  /** Falhas de leitura: o painel nao conseguiu abrir a aba. Impedem os numeros de existirem. */
+  falhas: string[];
 }
 
 export interface DailyPoint {
@@ -116,6 +118,8 @@ export interface MetricsResponse {
   filtro: { lineId: string; editionId: string | null; from: string; to: string };
   fetchedAt: string;
   warnings: string[];
+  /** Falhas de leitura das planilhas. Se vier preenchido, os numeros nao sao confiaveis. */
+  falhas: string[];
   /** Verdadeiro quando o painel ainda roda sem a chave do Google (dados de exemplo). */
   demo: boolean;
 }

@@ -5,6 +5,7 @@ export interface EstadoApp {
   fetchedAt: string | null;
   versao: number;
   erro: string | null;
+  falhas: string[];
   ticketPrice: number;
   eventLines: Array<{
     id: string;

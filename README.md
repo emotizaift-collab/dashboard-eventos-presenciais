@@ -63,8 +63,13 @@ funcionário robô. É isso que a gente vai criar agora. **É de graça.**
 2. No topo da tela, clique no seletor de projeto e depois em **"Novo projeto"**.
    Dê o nome **`Painel Eventos IFT`** e clique em **Criar**.
 3. Espere alguns segundos e confirme que o projeto novo está selecionado no topo.
-4. Na barra de busca do topo, digite **`Google Sheets API`** e clique no
-   resultado. Depois clique no botão azul **Ativar**.
+4. **⚠️ NÃO PULE ESTE.** Na barra de busca do topo, digite **`Google Sheets API`**,
+   clique no resultado e depois no botão azul **Ativar**.
+
+   Este é o passo que mais some. A tela seguinte funciona normalmente mesmo sem
+   ele, e a chave é criada sem reclamar — mas o painel abre com **tudo zerado**.
+   Confira que o botão virou "Gerenciar" (e não "Ativar") antes de seguir.
+   Depois de ativar, leve ~2 minutos para o Google propagar.
 5. Na barra de busca, digite **`Contas de serviço`** e clique no resultado.
 6. Clique em **"Criar conta de serviço"**.
    - Nome: **`painel-eventos`**
@@ -196,6 +201,7 @@ Depois de mexer em qualquer coisa, clique em **Salvar alterações**.
 | O que você vê | O que fazer |
 |---|---|
 | Uma tarja amarela dizendo **"Modo demonstração"** | A chave do Google não chegou. Confira se `GOOGLE_SERVICE_ACCOUNT_JSON` foi colada inteira no Render, sem faltar pedaço. |
+| Tarja vermelha dizendo que **a Google Sheets API não foi ativada** | Faltou o item 4 do Passo 1. Abra o link que aparece na própria tarja, clique em **Ativar**, espere ~2 minutos e clique em *Atualizar agora*. |
 | **"Falha ao ler as planilhas"** com erro 403 | O robô não foi convidado. Refaça o Passo 2 nas duas planilhas. |
 | **"Falha ao ler as planilhas"** com erro 400 ou *Unable to parse range* | O nome de alguma aba está diferente. Vá em Configuração → *Verificar conexão com as planilhas* e compare com o que está em *Ajustes avançados*. |
 | Um evento aparece **zerado** | Vá em Configuração e olhe *"Nomes que o painel não reconheceu"*. Provavelmente a campanha usa uma sigla que ainda não foi cadastrada. |

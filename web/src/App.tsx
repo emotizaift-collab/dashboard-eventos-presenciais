@@ -89,6 +89,7 @@ export function App() {
   }
 
   const avisos = dados?.warnings ?? [];
+  const falhas = dados?.falhas ?? estado.falhas ?? [];
 
   return (
     <div className="app">
@@ -121,6 +122,17 @@ export function App() {
       {erro && <div className="aviso erro"><strong>Erro:</strong> {erro}</div>}
       {estado.erro && !estado.demo && (
         <div className="aviso erro"><strong>Falha ao ler as planilhas:</strong> {estado.erro}</div>
+      )}
+
+      {falhas.length > 0 && (
+        <div className="aviso erro">
+          <strong>O painel não conseguiu ler as planilhas, então os números abaixo estão zerados.</strong>
+          <ul>
+            {falhas.map((falha) => (
+              <li key={falha}>{falha}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {avisos.length > 0 && !estado.demo && (

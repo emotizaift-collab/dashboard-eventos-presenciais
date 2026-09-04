@@ -28,6 +28,7 @@ app.get('/api/state', (_req, res) => {
     fetchedAt: data?.fetchedAt ?? null,
     versao: store.getVersion(),
     erro: store.getLastError(),
+    falhas: data?.falhas ?? [],
     ticketPrice: store.getConfig().ticketPrice,
     eventLines: store.getConfig().eventLines.map((line) => ({
       id: line.id,
@@ -67,6 +68,7 @@ app.get('/api/metrics', (req, res) => {
     filtro: { lineId, editionId, from, to },
     fetchedAt: data.fetchedAt,
     warnings: [...data.warnings, ...warnings],
+    falhas: data.falhas,
     demo: !hasCredentials(),
   };
   res.json(resposta);

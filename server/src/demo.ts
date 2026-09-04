@@ -84,6 +84,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
     buyers,
     traffic,
     fetchedAt: new Date().toISOString(),
+    falhas: [],
     warnings: [
       'Modo demonstracao: a chave de acesso do Google ainda nao foi configurada, entao estes numeros sao inventados.',
     ],
