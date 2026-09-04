@@ -75,6 +75,7 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     if (!rawEvent && !rawTicketType && !ambassador) continue;
     const match = matchEdition(matcher, rawEvent);
     buyers.push({
+      linha: i + 1,
       date: parseDate(cell(row, buyersDateCol)),
       rawEvent,
       editionId: match?.editionId ?? null,

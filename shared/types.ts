@@ -88,6 +88,8 @@ export interface LeadRow {
 
 /** Uma linha de comprador ja normalizada. */
 export interface BuyerRow {
+  /** Numero da linha na aba, igual ao que aparece no Google Sheets. */
+  linha: number;
   date: string | null;
   rawEvent: string;
   editionId: string | null;

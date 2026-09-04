@@ -9,7 +9,9 @@ const qtd = (metrics, id) => metrics.ingressos.find((t) => t.id === id)?.quantid
 const config = JSON.parse(fs.readFileSync(new URL('../../config/event-config.default.json', import.meta.url), 'utf8'));
 
 const lead = (date, edition = 'dai-atual') => ({ date, rawEvent: 'DAI', editionId: edition, lineId: 'dai' });
+let proximaLinha = 2;
 const compra = (date, ticketKind, ambassador = '', edition = 'dai-atual') => ({
+  linha: proximaLinha++,
   date, rawEvent: 'DAI', editionId: edition, lineId: 'dai',
   ticketKind, rawTicketType: ticketKind ?? '', ambassador,
 });
@@ -100,10 +102,15 @@ test('filtrar por edicao separa o nome atual do historico', () => {
   assert.equal(qtd(soHistorico.metrics, 'individual'), 1);
 });
 
-test('avisa quando ha compradores sem data valida', () => {
-  const comSemData = { ...dataset, buyers: [...dataset.buyers, compra(null, 'individual')] };
+test('o aviso de data faltando aponta o numero da linha na planilha', () => {
+  const semData = { ...compra(null, 'individual'), linha: 137 };
+  const outra = { ...compra(null, 'duplo'), linha: 42 };
+  const comSemData = { ...dataset, buyers: [...dataset.buyers, semData, outra] };
   const { warnings } = computeMetrics(config, comSemData, filtro);
-  assert.ok(warnings.some((aviso) => aviso.includes('sem data')));
+  const aviso = warnings.find((w) => w.includes('sem data valida'));
+  assert.ok(aviso, 'precisa avisar');
+  // Ordenado do menor para o maior, para bater com a ordem de rolagem da planilha.
+  assert.match(aviso, /linhas: 42, 137/);
 });
 
 test('intervalo invertido nao gera dias', () => {

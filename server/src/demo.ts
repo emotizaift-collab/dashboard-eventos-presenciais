@@ -55,6 +55,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
         const sorteio = random();
         const ticketKind = sorteio > 0.85 ? 'triplo' : sorteio > 0.55 ? 'duplo' : 'individual';
         buyers.push({
+          linha: buyers.length + 2,
           date,
           rawEvent: rotulo,
           editionId: edition.id,
@@ -67,6 +68,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
 
       if (random() > 0.75) {
         buyers.push({
+          linha: buyers.length + 2,
           date,
           rawEvent: rotulo,
           editionId: edition.id,

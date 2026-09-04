@@ -55,11 +55,15 @@ export function computeMetrics(
   const buyersOfEvent = data.buyers.filter((row) => matchesFilter(filter, row.lineId, row.editionId));
   const buyers = buyersOfEvent.filter((row) => inRange(row.date, filter.from, filter.to));
 
-  const buyersSemData = buyersOfEvent.filter((row) => !row.date).length;
-  if (buyersSemData > 0) {
+  // Apontar as linhas: sem elas o aviso obriga a procurar a agulha no palheiro.
+  const semData = buyersOfEvent.filter((row) => !row.date);
+  if (semData.length > 0) {
+    const linhas = semData.map((row) => row.linha).sort((a, b) => a - b);
+    const mostradas = linhas.slice(0, 15).join(', ');
+    const resto = linhas.length > 15 ? ` e mais ${linhas.length - 15}` : '';
     warnings.push(
-      `${buyersSemData} registro(s) de compradores estao sem data valida e ficaram de fora do periodo selecionado. ` +
-        'Confirme qual coluna da aba de compradores guarda a data da compra.',
+      `${semData.length} registro(s) de compradores estao sem data valida e ficaram de fora do periodo ` +
+        `selecionado. Na aba de compradores, preencha a data nas linhas: ${mostradas}${resto}.`,
     );
   }
 
