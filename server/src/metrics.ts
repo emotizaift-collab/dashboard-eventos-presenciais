@@ -7,7 +7,7 @@
  *  - Retorno = Faturamento Liquido - Total Custo Campanha
  *  - Participantes = 1x individual + 2x duplo + 3x triplo + embaixadores + convidados
  */
-import type { AppConfig, DataSet, DailyPoint, Metrics } from '../../shared/types.js';
+import type { AppConfig, DataSet, DailyPoint, Metrics, TicketKind } from '../../shared/types.js';
 
 export interface MetricsFilter {
   lineId: string;
@@ -69,6 +69,24 @@ export function computeMetrics(
     comEmbaixador.map((row) => row.ambassador.trim().toLowerCase()),
   ).size;
 
+  // Cada ingresso duplo gera 1 acompanhante e cada triplo gera 2. A equipe
+  // preenche esses nomes a mao, ligando para o comprador, entao a diferenca
+  // aponta exatamente quantos telefonemas ainda faltam.
+  const acompanhantes = buyers.filter((row) => row.ticketKind === 'acompanhante').length;
+  const acompanhantesEsperados = duplo + triplo * 2;
+  if (acompanhantes < acompanhantesEsperados) {
+    warnings.push(
+      `Faltam ${acompanhantesEsperados - acompanhantes} nome(s) de acompanhante a cadastrar: ` +
+        `${duplo} ingresso(s) duplo(s) e ${triplo} triplo(s) pedem ${acompanhantesEsperados} acompanhante(s), ` +
+        `e so ${acompanhantes} foi(ram) preenchido(s). Isso nao afeta o faturamento.`,
+    );
+  } else if (acompanhantes > acompanhantesEsperados) {
+    warnings.push(
+      `Ha ${acompanhantes} acompanhante(s) cadastrado(s), mas os ingressos vendidos comportam ` +
+        `${acompanhantesEsperados}. Pode haver linha duplicada ou um tipo de ingresso digitado errado.`,
+    );
+  }
+
   const custoCampanha = round2(traffic.reduce((total, row) => total + row.cost, 0));
   const faturamentoLiquido = round2(
     individual * price + duplo * price * 2 + triplo * price * 3,
@@ -104,8 +122,11 @@ function buildSeries(
 ): DailyPoint[] {
   const days = listDays(filter.from, filter.to);
   const leadsByDay = countByDay(leads.map((row) => row.date));
+  const TIPOS_PAGOS: TicketKind[] = ['individual', 'duplo', 'triplo'];
   const vendasByDay = countByDay(
-    buyers.filter((row) => row.ticketKind && row.ticketKind !== 'cortesia').map((row) => row.date),
+    buyers
+      .filter((row) => row.ticketKind !== null && TIPOS_PAGOS.includes(row.ticketKind))
+      .map((row) => row.date),
   );
   const custoByDay = new Map<string, number>();
   for (const row of traffic) {

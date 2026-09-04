@@ -127,3 +127,44 @@ test('o resumo mede o tamanho do que esta ficando de fora', () => {
   assert.equal(r.custoSemEvento, 250);
   assert.ok(metrics.naoClassificado.tiposIngresso.includes('CAD DA MARIA'));
 });
+
+test('acompanhante nao entra no faturamento, nos participantes nem nas vendas do grafico', () => {
+  const comAcompanhantes = {
+    ...dataset,
+    buyers: [
+      ...dataset.buyers,
+      compra('2026-09-02', 'acompanhante'),       // segunda pessoa do duplo
+      compra('2026-09-02', 'acompanhante'),       // duas do triplo
+      compra('2026-09-02', 'acompanhante'),
+    ],
+  };
+  const base = computeMetrics(config, dataset, filtro).metrics;
+  const com = computeMetrics(config, comAcompanhantes, filtro).metrics;
+
+  assert.equal(com.faturamentoLiquido, base.faturamentoLiquido, 'faturamento nao pode dobrar');
+  assert.equal(com.participantes, base.participantes, 'a cadeira do duplo ja foi contada');
+  assert.deepEqual(com.ingressos, base.ingressos);
+  assert.deepEqual(
+    com.serie.map((p) => p.vendas),
+    base.serie.map((p) => p.vendas),
+    'acompanhante nao e uma venda nova',
+  );
+});
+
+test('avisa quantos nomes de acompanhante ainda faltam preencher', () => {
+  // 1 duplo + 1 triplo => 1 + 2 = 3 acompanhantes esperados; ha 1 cadastrado.
+  const parcial = { ...dataset, buyers: [...dataset.buyers, compra('2026-09-02', 'acompanhante')] };
+  const { warnings } = computeMetrics(config, parcial, filtro);
+  const aviso = warnings.find((w) => w.includes('acompanhante'));
+  assert.ok(aviso, 'precisa avisar sobre os nomes que faltam');
+  assert.match(aviso, /Faltam 2 nome/);
+});
+
+test('avisa quando ha acompanhante demais para os ingressos vendidos', () => {
+  const demais = {
+    ...dataset,
+    buyers: [...dataset.buyers, ...Array.from({ length: 9 }, () => compra('2026-09-02', 'acompanhante'))],
+  };
+  const { warnings } = computeMetrics(config, demais, filtro);
+  assert.ok(warnings.some((w) => w.includes('linha duplicada')));
+});

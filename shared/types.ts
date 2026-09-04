@@ -1,6 +1,13 @@
 /** Tipos compartilhados entre o servidor e a interface. */
 
-export type TicketKind = 'individual' | 'duplo' | 'triplo' | 'cortesia';
+/**
+ * 'acompanhante' e a segunda (ou terceira) pessoa de um ingresso duplo/triplo.
+ * Quem compra nao consegue cadastrar o nome do acompanhante na hora, entao a
+ * equipe liga depois e registra numa linha propria, marcada "CAD DA <comprador>".
+ * O ingresso duplo JA contabiliza essas cadeiras e esse valor: contar a linha do
+ * acompanhante de novo dobraria o faturamento e os participantes.
+ */
+export type TicketKind = 'individual' | 'duplo' | 'triplo' | 'cortesia' | 'acompanhante';
 
 export interface ColumnMapLeads {
   date: string;

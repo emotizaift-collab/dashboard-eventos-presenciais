@@ -25,7 +25,12 @@
     "individual": ["individual", "ingresso individual", "1 pessoa", "uma pessoa"],
     "duplo": ["cadeira dupla", "duas pessoas", "ingresso duplo", "duplo", "dupla", "2 pessoas"],
     "triplo": ["ingresso triplo", "tres pessoas", "triplo", "tripla", "3 pessoas"],
-    "cortesia": ["convite embaixador", "embaixador", "convite", "cortesia"]
+    "cortesia": ["convite embaixador", "embaixador", "convite", "cortesia"],
+    "acompanhante": [
+      "cad", "cad da", "cad de", "cad do", "cad das", "cad dos",
+      "cadeira da", "cadeira de", "cadeira do",
+      "acompanhante", "dupla de", "dupla da", "dupla do"
+    ]
   },
   "eventLines": [
     {
@@ -63,7 +68,7 @@
           "id": "anima-atual",
           "label": "ANIMA Day",
           "current": true,
-          "aliases": ["ANIMA", "ANIMADAY", "ANIMA Day"]
+          "aliases": ["ANIMADAY", "ANIMA Day"]
         },
         {
           "id": "anima-historico",
@@ -73,9 +78,7 @@
             "Day Training Sist",
             "Day Training",
             "DAYTRAINING",
-            "DAY TRAININ",
-            "Dinâmicas Sistêmicas INFINITAS – O Treinamento",
-            "Dinamicas Sistemicas INFINITAS - O Treinamento"
+            "DAY TRAININ"
           ]
         }
       ]

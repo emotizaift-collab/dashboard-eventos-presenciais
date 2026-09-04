@@ -40,6 +40,16 @@ antigos, separados) e por **intervalo de datas**.
 - **Participantes** = individuais + (duplos × 2) + (triplos × 3) + embaixadores + convidados
 - **Embaixadores** conta *nomes diferentes*: se a Maria trouxe 3 convidados,
   ela conta como 1 embaixador e 3 convidados
+- **Acompanhante não é uma venda nova.** Quem compra um ingresso duplo não
+  consegue cadastrar o nome da segunda pessoa na hora, então a equipe liga
+  depois e registra numa linha própria, com o tipo escrito como
+  `CAD DA <nome do comprador>`. O ingresso duplo **já** contabiliza as duas
+  cadeiras e o valor dobrado — contar a linha do acompanhante de novo dobraria
+  o faturamento e os participantes. Por isso o painel reconhece essas linhas e
+  as ignora de propósito.
+- O painel confere essa conta sozinho: cada duplo pede 1 acompanhante e cada
+  triplo pede 2. Se faltar nome, ele avisa quantos ainda faltam cadastrar —
+  serve de lembrete dos telefonemas pendentes, e não afeta o faturamento.
 
 ---
 
@@ -248,6 +258,18 @@ A planilha **BASE DE LEADS** tem quase 3 MB e anos de histórico de vários outr
 produtos da empresa. Exportar o arquivo inteiro trava e corta antes de chegar nas
 abas que interessam. Por isso o painel usa `spreadsheets.values.get` pedindo o
 range de uma aba só — cada leitura fica pequena e confiável.
+
+### Quais campanhas pertencem a cada evento
+
+Confirmado com a IFT, contra a leitura real da planilha de tráfego:
+
+- **ANIMA Day**: somente campanhas com `ANIMADAY` no nome. A tag `[DI]` e o nome
+  "Dinâmicas Sistêmicas INFINITAS – O Treinamento" são de **outro produto**, apesar
+  de o documento original de especificação listá-los como nome antigo do ANIMA Day.
+- **Dinâmicas de Alto Impacto**: `DAI` no nome atual; `PAI`, `PAIAOVIVO`,
+  `PAI AO VIVO`, `PAI 147$` e `DINAMICASAOVIVO` no histórico.
+- As demais siglas do tráfego (`7C`, `PAS`, `MI`, `TV`, `NP`, `CDM`, `CAI`, `IFT`,
+  `DI`) são de outros produtos da empresa e ficam de fora de propósito.
 
 ### Cuidado com siglas curtas
 

@@ -24,10 +24,8 @@ const casos = [
   ['Palestrante de Alto Impacto', 'dai', 'dai-historico'],
   // Evento B — nome novo
   ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-atual'],
-  ['[ANIMA] [LEADS] [CBO] - 07/07', 'anima', 'anima-atual'],
   ['ANIMA Day', 'anima', 'anima-atual'],
   // Evento B — nome historico
-  ['Dinâmicas Sistêmicas INFINITAS – O Treinamento', 'anima', 'anima-historico'],
   ['Day Training Sist', 'anima', 'anima-historico'],
 ];
 
@@ -43,6 +41,10 @@ test('reconhece as campanhas e os nomes dos dois eventos', () => {
 test('ignora campanhas de outros produtos da empresa', () => {
   const forasteiras = [
     '[DI] [VENDAS] [PAGINA] [ADV] - BID CAP',
+    // Confirmado pela IFT: "Dinamicas Sistemicas INFINITAS" e outro produto,
+    // nao o nome antigo do ANIMA Day. So [ANIMADAY] identifica o ANIMA Day.
+    'Dinâmicas Sistêmicas INFINITAS – O Treinamento',
+    '[ANIMA] [LEADS] [CBO] - 07/07',
     '[PAS] [VENDAS] [INLEAD] [ABO] [F] [VID] - 29/10',
     '[7C] [VENDAS] [PAGINA] [ABO] - LAB DE ADS - 18/12',
     '[MI] [VENDAS] [PAGINA] [ADV] - 11/JAN/26',
@@ -94,4 +96,22 @@ test('apelidos escritos com espaco tambem sao reconhecidos', () => {
   const day = matchEdition(matcher, 'DAY TRAININ');
   assert.ok(day, '"DAY TRAININ" (digitado incompleto na planilha) precisa ser reconhecido');
   assert.equal(day.editionId, 'anima-historico');
+});
+
+test('linha de acompanhante e reconhecida e nunca vira ingresso', () => {
+  // Valores reais da coluna H: a equipe liga para o comprador do duplo e
+  // registra o nome da segunda pessoa numa linha propria.
+  const acompanhantes = [
+    'CAD DA LUCIELMA', 'CAD DE MARISA', 'CAD DO ALBERTO',
+    'CAD VANESSA', 'Cad da Mara', 'CAD CIRLENE', 'CAD DA MÁRCIA BORBA',
+  ];
+  for (const texto of acompanhantes) {
+    assert.equal(matchTicketKind(matcher, texto), 'acompanhante', `errou em: ${texto}`);
+  }
+});
+
+test('acompanhante nao rouba a classificacao de um ingresso de verdade', () => {
+  assert.equal(matchTicketKind(matcher, 'cadeira dupla'), 'duplo');
+  assert.equal(matchTicketKind(matcher, 'individual'), 'individual');
+  assert.equal(matchTicketKind(matcher, 'ingresso triplo'), 'triplo');
 });
