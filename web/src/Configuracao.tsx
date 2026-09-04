@@ -147,6 +147,8 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
             eventos, escolha a qual pertence e clique em Adicionar. Se não for (é de outro produto da
             empresa), pode ignorar.
           </p>
+
+          {naoClassificado?.resumo && <ResumoDoQueFalta resumo={naoClassificado.resumo} />}
           <table className="tabela">
             <thead>
               <tr>
@@ -362,6 +364,39 @@ function LinhaSugestao({
         )}
       </td>
     </tr>
+  );
+}
+
+/** O tamanho do problema. Uma lista de valores distintos nao mostra quantas linhas somem. */
+function ResumoDoQueFalta({ resumo }: { resumo: Metrics['naoClassificado']['resumo'] }) {
+  const itens = [
+    { n: resumo.comprasSemTipo, t: 'compras com tipo de ingresso não reconhecido — não entram no faturamento nem nos participantes' },
+    { n: resumo.leadsIgnorados, t: 'leads com nome de evento não reconhecido — não entram na contagem de leads' },
+    { n: resumo.comprasSemEvento, t: 'compras com nome de evento não reconhecido' },
+  ].filter((item) => item.n > 0);
+
+  if (itens.length === 0 && resumo.custoSemEvento === 0) return null;
+
+  return (
+    <div className="aviso alerta" style={{ marginBottom: 16 }}>
+      <strong>O que está ficando de fora hoje:</strong>
+      <ul>
+        {itens.map((item) => (
+          <li key={item.t}>
+            <strong>{item.n.toLocaleString('pt-BR')}</strong> {item.t}
+          </li>
+        ))}
+        {resumo.custoSemEvento > 0 && (
+          <li>
+            <strong>
+              {resumo.custoSemEvento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </strong>{' '}
+            em campanhas de eventos não reconhecidos. Boa parte disso é de outros produtos da empresa e
+            deve mesmo ficar de fora — confira a lista abaixo antes de adicionar qualquer coisa.
+          </li>
+        )}
+      </ul>
+    </div>
   );
 }
 

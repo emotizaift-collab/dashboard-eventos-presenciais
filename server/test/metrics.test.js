@@ -105,3 +105,25 @@ test('intervalo invertido nao gera dias', () => {
   assert.equal(listDays('2026-09-10', '2026-09-01').length, 0);
   assert.equal(listDays('2026-09-01', '2026-09-01').length, 1);
 });
+
+test('o resumo mede o tamanho do que esta ficando de fora', () => {
+  const sujo = {
+    ...dataset,
+    leads: [...dataset.leads, { date: '2026-09-01', rawEvent: 'OUTRO PRODUTO', editionId: null, lineId: null }],
+    buyers: [
+      ...dataset.buyers,
+      compra('2026-09-01', null),                       // evento certo, tipo desconhecido
+      { ...compra('2026-09-01', 'individual'), rawTicketType: 'CAD DA MARIA', ticketKind: null },
+      { date: '2026-09-01', rawEvent: 'OUTRO', editionId: null, lineId: null, ticketKind: null, rawTicketType: '', ambassador: '' },
+    ],
+    traffic: [...dataset.traffic, { date: '2026-09-01', campaign: '[DI] outro produto', editionId: null, lineId: null, cost: 250 }],
+  };
+  const { metrics } = computeMetrics(config, sujo, filtro);
+  const r = metrics.naoClassificado.resumo;
+
+  assert.equal(r.leadsIgnorados, 1);
+  assert.equal(r.comprasSemEvento, 1);
+  assert.equal(r.comprasSemTipo, 1, 'so conta linha com texto no tipo, nao celula vazia');
+  assert.equal(r.custoSemEvento, 250);
+  assert.ok(metrics.naoClassificado.tiposIngresso.includes('CAD DA MARIA'));
+});

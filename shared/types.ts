@@ -110,6 +110,13 @@ export interface Metrics {
     eventosCompradores: string[];
     tiposIngresso: string[];
     campanhas: string[];
+    /** Quanto cada problema custa em dado perdido. Valor distinto engana; o que importa e o tamanho. */
+    resumo: {
+      leadsIgnorados: number;
+      comprasSemEvento: number;
+      comprasSemTipo: number;
+      custoSemEvento: number;
+    };
   };
 }
 

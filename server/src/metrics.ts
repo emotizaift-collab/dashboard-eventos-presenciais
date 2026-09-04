@@ -149,13 +149,24 @@ function collectUnmatched(data: DataSet): Metrics['naoClassificado'] {
   const take = (values: string[]) =>
     [...new Set(values.filter((value) => value.trim() !== ''))].slice(0, 50);
 
+  const leadsIgnorados = data.leads.filter((row) => !row.lineId && row.rawEvent.trim() !== '');
+  const comprasSemEvento = data.buyers.filter((row) => !row.lineId && row.rawEvent.trim() !== '');
+  const comprasSemTipo = data.buyers.filter(
+    (row) => row.lineId && !row.ticketKind && row.rawTicketType.trim() !== '',
+  );
+  const custoSemEvento = data.traffic.filter((row) => !row.lineId);
+
   return {
-    eventosLeads: take(data.leads.filter((row) => !row.lineId).map((row) => row.rawEvent)),
-    eventosCompradores: take(data.buyers.filter((row) => !row.lineId).map((row) => row.rawEvent)),
-    tiposIngresso: take(
-      data.buyers.filter((row) => row.lineId && !row.ticketKind).map((row) => row.rawTicketType),
-    ),
-    campanhas: take(data.traffic.filter((row) => !row.lineId).map((row) => row.campaign)),
+    eventosLeads: take(leadsIgnorados.map((row) => row.rawEvent)),
+    eventosCompradores: take(comprasSemEvento.map((row) => row.rawEvent)),
+    tiposIngresso: take(comprasSemTipo.map((row) => row.rawTicketType)),
+    campanhas: take(custoSemEvento.map((row) => row.campaign)),
+    resumo: {
+      leadsIgnorados: leadsIgnorados.length,
+      comprasSemEvento: comprasSemEvento.length,
+      comprasSemTipo: comprasSemTipo.length,
+      custoSemEvento: round2(custoSemEvento.reduce((total, row) => total + row.cost, 0)),
+    },
   };
 }
 

@@ -84,3 +84,14 @@ test('classifica os tipos de ingresso escritos de varios jeitos', () => {
     assert.equal(matchTicketKind(matcher, texto), esperado, `tipo errado para: "${texto}"`);
   }
 });
+
+test('apelidos escritos com espaco tambem sao reconhecidos', () => {
+  // Valores reais encontrados nas planilhas de leads e de compradores.
+  const pai = matchEdition(matcher, 'PAI AO VIVO');
+  assert.ok(pai, '"PAI AO VIVO" precisa ser reconhecido');
+  assert.equal(pai.editionId, 'dai-historico');
+
+  const day = matchEdition(matcher, 'DAY TRAININ');
+  assert.ok(day, '"DAY TRAININ" (digitado incompleto na planilha) precisa ser reconhecido');
+  assert.equal(day.editionId, 'anima-historico');
+});
