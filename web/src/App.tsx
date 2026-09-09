@@ -4,12 +4,11 @@ import { api, conectarAoVivo, type EstadoApp } from './api';
 import { FiltroCampanhas } from './FiltroCampanhas';
 import { Painel } from './Painel';
 import { Configuracao } from './Configuracao';
+import { Sidebar } from './Sidebar';
 import { dataBr, diasAtras, hoje, horaBr, inicioDoMes } from './format';
 
-type Aba = 'painel' | 'config';
-
 export function App() {
-  const [aba, setAba] = useState<Aba>('painel');
+  const [secao, setSecao] = useState('eventos-presenciais');
   const [estado, setEstado] = useState<EstadoApp | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [dados, setDados] = useState<MetricsResponse | null>(null);
@@ -94,8 +93,11 @@ export function App() {
 
   if (!estado || !config) {
     return (
-      <div className="app">
-        <div className="carregando">{erro ? `Erro: ${erro}` : 'Carregando o painel...'}</div>
+      <div className="layout">
+        <Sidebar secaoAtiva={secao} aoEscolher={setSecao} rodape="Carregando..." />
+        <main className="conteudo">
+          <div className="carregando">{erro ? `Erro: ${erro}` : 'Carregando o painel...'}</div>
+        </main>
       </div>
     );
   }
@@ -103,24 +105,30 @@ export function App() {
   const avisos = dados?.warnings ?? [];
   const falhas = dados?.falhas ?? estado.falhas ?? [];
 
+  const naSecao = (id: string) => secao === id;
+
   return (
-    <div className="app">
-      <header className="topo">
-        <div>
-          <h1>Painel de Vendas — Eventos Presenciais</h1>
-          <p className="sub">
-            Última leitura das planilhas: {horaBr(estado.fetchedAt)}
-            {' · '}Ingresso individual: {estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
-        </div>
-        <div className="abas">
-          <button className={aba === 'painel' ? 'ativa' : ''} onClick={() => setAba('painel')}>
-            Painel
-          </button>
-          <button className={aba === 'config' ? 'ativa' : ''} onClick={() => setAba('config')}>
-            Configuração
-          </button>
-        </div>
+    <div className="layout">
+      <Sidebar
+        secaoAtiva={secao}
+        aoEscolher={setSecao}
+        rodape={
+          <>
+            Última leitura
+            <br />
+            {horaBr(estado.fetchedAt)}
+          </>
+        }
+      />
+
+      <main className="conteudo">
+      <header className="pagina-topo">
+        <h1>{naSecao('configuracao') ? 'Configuração' : 'Eventos Presenciais'}</h1>
+        <p>
+          {naSecao('configuracao')
+            ? 'Nomes dos eventos, tipos de ingresso e de onde os dados são lidos.'
+            : `Ingresso individual: ${estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+        </p>
       </header>
 
       {estado.demo && (
@@ -158,7 +166,7 @@ export function App() {
         </div>
       )}
 
-      {aba === 'painel' && (
+      {naSecao('eventos-presenciais') && (
         <>
           <div className="filtros">
             <div className="campo">
@@ -236,7 +244,7 @@ export function App() {
         </>
       )}
 
-      {aba === 'config' && (
+      {naSecao('configuracao') && (
         <Configuracao
           config={config}
           naoClassificado={dados?.metrics.naoClassificado ?? null}
@@ -247,6 +255,7 @@ export function App() {
           }}
         />
       )}
+      </main>
     </div>
   );
 }

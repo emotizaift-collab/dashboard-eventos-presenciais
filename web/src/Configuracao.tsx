@@ -215,7 +215,7 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
           <div className="linha-evento" key={tipo.id}>
             <header>
               <h4>{tipo.label}</h4>
-              <span style={{ fontSize: 12, color: tipo.contaComoVenda ? '#2fbf71' : '#93a0bb' }}>
+              <span style={{ fontSize: 12, color: tipo.contaComoVenda ? 'var(--texto)' : 'var(--texto-fraco)' }}>
                 {tipo.contaComoVenda
                   ? `vale ${precoVisivel(tipo, rascunho.ticketPrice)}`
                   : 'não entra no faturamento'}
@@ -404,7 +404,7 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
         {diagnostico && (
           <pre
             style={{
-              background: '#0f1420', border: '1px solid #2a3348', borderRadius: 10,
+              background: 'var(--fundo)', border: '1px solid var(--divisoria)', borderRadius: 3,
               padding: 14, fontSize: 12, overflowX: 'auto', marginTop: 14, lineHeight: 1.5,
             }}
           >
@@ -420,7 +420,7 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
         <button type="button" className="botao perigo" disabled={salvando} onClick={restaurar}>
           Restaurar padrão
         </button>
-        {alterado && <span style={{ fontSize: 13, color: '#f5b544' }}>Você tem alterações não salvas.</span>}
+        {alterado && <span style={{ fontSize: 13, color: 'var(--acento)' }}>Você tem alterações não salvas.</span>}
       </div>
     </>
   );
@@ -470,8 +470,8 @@ function LinhaSugestao({
   return (
     <tr>
       <td><code className="mono">{sugestao.valor}</code></td>
-      <td style={{ color: '#93a0bb' }}>{sugestao.origem}</td>
-      <td style={{ color: '#93a0bb', whiteSpace: 'nowrap' }}>
+      <td style={{ color: 'var(--texto-fraco)' }}>{sugestao.origem}</td>
+      <td style={{ color: 'var(--texto-fraco)', whiteSpace: 'nowrap' }}>
         {sugestao.linhas.toLocaleString('pt-BR')} linha{sugestao.linhas === 1 ? '' : 's'}
         {sugestao.custo !== undefined && sugestao.custo > 0 && (
           <>
@@ -482,7 +482,7 @@ function LinhaSugestao({
       </td>
       <td>
         {pronto ? (
-          <span style={{ color: '#2fbf71', fontSize: 13 }}>Adicionado — lembre de salvar</span>
+          <span style={{ color: 'var(--positivo)', fontSize: 13 }}>Adicionado — lembre de salvar</span>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
             <select value={destino} onChange={(e) => setDestino(e.target.value)} style={{ flex: 1 }}>
