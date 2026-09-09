@@ -19,7 +19,7 @@ export function Painel({ dados }: Props) {
         <Card rotulo="Total Custo Campanha" valor={dinheiro(m.custoCampanha)} />
         <Card rotulo="Faturamento Líquido" valor={dinheiro(m.faturamentoLiquido)} />
         <Card
-          rotulo="Retorno"
+          rotulo="Resultado"
           valor={dinheiro(m.retorno)}
           tom={m.retorno >= 0 ? 'positivo' : 'negativo'}
           nota={m.retorno >= 0 ? 'No azul' : 'No vermelho'}

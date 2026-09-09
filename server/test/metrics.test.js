@@ -36,7 +36,7 @@ const dataset = {
   warnings: [],
 };
 
-const filtro = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-03' };
+const filtro = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-03', campanhas: [] };
 
 test('calcula faturamento pelo preco do ingresso, sem contar cortesias', () => {
   const { metrics } = computeMetrics(config, dataset, filtro);
@@ -285,4 +285,70 @@ test('linha totalmente vazia nao vira alarme falso', () => {
   };
   const { warnings } = computeMetrics(config, { ...dataset, buyers: [...dataset.buyers, vazia] }, filtro);
   assert.ok(!warnings.some((w) => w.includes('coluna do evento em branco')));
+});
+
+// --- Filtro de campanhas (Fase 1, item 5 e 6) ---
+
+const datasetCampanhas = {
+  leads: [lead('2026-09-01'), lead('2026-09-02')],
+  buyers: [compra('2026-09-01', 'individual'), compra('2026-09-02', 'duplo')],
+  traffic: [
+    { date: '2026-09-01', campaign: '[DAI] [LEADS] [ABO] - 04-09', editionId: 'dai-atual', lineId: 'dai', cost: 300 },
+    { date: '2026-09-02', campaign: '[DAI] [VENDAS] [PAGINA] - 05-09', editionId: 'dai-atual', lineId: 'dai', cost: 200 },
+    { date: '2026-09-02', campaign: '[PAI] [VENDAS] [INLEAD] - antiga', editionId: 'dai-historico', lineId: 'dai', cost: 999 },
+  ],
+  fetchedAt: new Date().toISOString(),
+  warnings: [],
+  falhas: [],
+};
+
+test('sem campanha selecionada, o custo soma todas as campanhas do evento', () => {
+  const { metrics } = computeMetrics(config, datasetCampanhas, filtro);
+  assert.equal(metrics.custoCampanha, 1499);
+});
+
+test('com campanhas selecionadas, o custo soma exatamente as escolhidas', () => {
+  const escolha = {
+    ...filtro,
+    campanhas: ['[DAI] [LEADS] [ABO] - 04-09', '[DAI] [VENDAS] [PAGINA] - 05-09'],
+  };
+  const { metrics } = computeMetrics(config, datasetCampanhas, escolha);
+  assert.equal(metrics.custoCampanha, 500, 'a campanha antiga nao foi escolhida e nao pode entrar');
+});
+
+test('o nome da campanha e comparado sem diferenciar caixa e espaco em volta', () => {
+  const escolha = { ...filtro, campanhas: ['  [dai] [leads] [abo] - 04-09  '] };
+  const { metrics } = computeMetrics(config, datasetCampanhas, escolha);
+  assert.equal(metrics.custoCampanha, 300);
+});
+
+test('faturamento segue o EVENTO das campanhas escolhidas, nao a campanha em si', () => {
+  // A aba de compradores nao tem coluna de campanha: o vinculo possivel e o evento.
+  // Como as duas campanhas escolhidas sao do mesmo evento, o faturamento e o do evento inteiro.
+  const escolha = { ...filtro, campanhas: ['[DAI] [LEADS] [ABO] - 04-09'] };
+  const semFiltro = computeMetrics(config, datasetCampanhas, filtro).metrics;
+  const comFiltro = computeMetrics(config, datasetCampanhas, escolha).metrics;
+  assert.equal(comFiltro.faturamentoLiquido, semFiltro.faturamentoLiquido);
+  assert.equal(comFiltro.leadsTotal, semFiltro.leadsTotal);
+});
+
+test('escolher campanha de outro evento zera faturamento e leads do evento filtrado', () => {
+  const outroEvento = {
+    ...datasetCampanhas,
+    traffic: [
+      ...datasetCampanhas.traffic,
+      { date: '2026-09-01', campaign: '[ANIMADAY] [LEADS] - 04-09', editionId: 'anima-atual', lineId: 'anima', cost: 50 },
+    ],
+  };
+  const escolha = { ...filtro, lineId: 'todos', campanhas: ['[ANIMADAY] [LEADS] - 04-09'] };
+  const { metrics } = computeMetrics(config, outroEvento, escolha);
+  assert.equal(metrics.custoCampanha, 50);
+  assert.equal(metrics.faturamentoLiquido, 0, 'nao ha compra do ANIMA Day neste dataset');
+  assert.equal(metrics.leadsTotal, 0);
+});
+
+test('Resultado e sempre faturamento menos custo', () => {
+  const escolha = { ...filtro, campanhas: ['[DAI] [LEADS] [ABO] - 04-09'] };
+  const { metrics } = computeMetrics(config, datasetCampanhas, escolha);
+  assert.equal(metrics.retorno, round(metrics.faturamentoLiquido - metrics.custoCampanha));
 });

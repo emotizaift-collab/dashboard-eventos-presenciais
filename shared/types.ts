@@ -167,9 +167,19 @@ export interface Metrics {
   };
 }
 
+/** Uma campanha de trafego, para alimentar o filtro de campanhas. */
+export interface CampanhaResumo {
+  nome: string;
+  custo: number;
+  linhas: number;
+  /** Evento a que a campanha pertence, quando o nome dela permite identificar. */
+  lineId: string | null;
+  eventoLabel: string | null;
+}
+
 export interface MetricsResponse {
   metrics: Metrics;
-  filtro: { lineId: string; editionId: string | null; from: string; to: string };
+  filtro: { lineId: string; editionId: string | null; from: string; to: string; campanhas: string[] };
   fetchedAt: string;
   warnings: string[];
   /** Falhas de leitura das planilhas. Se vier preenchido, os numeros nao sao confiaveis. */

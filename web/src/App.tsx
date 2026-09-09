@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AppConfig, MetricsResponse } from '../../shared/types';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types';
 import { api, conectarAoVivo, type EstadoApp } from './api';
+import { FiltroCampanhas } from './FiltroCampanhas';
 import { Painel } from './Painel';
 import { Configuracao } from './Configuracao';
 import { dataBr, diasAtras, hoje, horaBr, inicioDoMes } from './format';
@@ -16,9 +17,10 @@ export function App() {
   const [atualizando, setAtualizando] = useState(false);
 
   const [linha, setLinha] = useState('');
-  const [edicao, setEdicao] = useState('todas');
   const [de, setDe] = useState(diasAtras(29));
   const [ate, setAte] = useState(hoje());
+  const [campanhas, setCampanhas] = useState<CampanhaResumo[]>([]);
+  const [campanhasSel, setCampanhasSel] = useState<string[]>([]);
 
   // Evita corrida entre respostas: so a busca mais recente pode escrever na tela.
   const buscaAtual = useRef(0);
@@ -40,7 +42,7 @@ export function App() {
     if (!linha) return;
     const marca = ++buscaAtual.current;
     try {
-      const resposta = await api.metricas({ line: linha, edition: edicao, from: de, to: ate });
+      const resposta = await api.metricas({ line: linha, from: de, to: ate, campanhas: campanhasSel });
       if (marca !== buscaAtual.current) return;
       setDados(resposta);
       setErro(null);
@@ -48,11 +50,26 @@ export function App() {
       if (marca !== buscaAtual.current) return;
       setErro(falha instanceof Error ? falha.message : String(falha));
     }
-  }, [linha, edicao, de, ate]);
+  }, [linha, de, ate, campanhasSel]);
 
   useEffect(() => {
     void buscarMetricas();
   }, [buscarMetricas]);
+
+  // A lista do filtro segue o periodo: campanha que nao rodou no intervalo nao
+  // precisa poluir a busca.
+  useEffect(() => {
+    let cancelado = false;
+    api
+      .campanhas({ from: de, to: ate })
+      .then((resposta) => {
+        if (!cancelado) setCampanhas(resposta.campanhas);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelado = true;
+    };
+  }, [de, ate, estado?.versao]);
 
   // Conexao ao vivo: o servidor avisa quando a planilha muda e o painel se refaz sozinho.
   useEffect(() => {
@@ -61,11 +78,6 @@ export function App() {
       void api.estado().then(setEstado).catch(() => undefined);
     });
   }, [buscarMetricas]);
-
-  const linhaAtual = useMemo(
-    () => estado?.eventLines.find((item) => item.id === linha) ?? null,
-    [estado, linha],
-  );
 
   async function atualizarAgora() {
     setAtualizando(true);
@@ -150,31 +162,16 @@ export function App() {
         <>
           <div className="filtros">
             <div className="campo">
-              <label htmlFor="linha">Evento</label>
+              <label htmlFor="linha">Nome do Evento</label>
               <select
                 id="linha"
                 value={linha}
-                onChange={(e) => {
-                  setLinha(e.target.value);
-                  setEdicao('todas');
-                }}
+                onChange={(e) => setLinha(e.target.value)}
               >
                 {estado.eventLines.map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
                 ))}
                 <option value="todos">Todos os eventos</option>
-              </select>
-            </div>
-
-            <div className="campo">
-              <label htmlFor="edicao">Nome / edição</label>
-              <select id="edicao" value={edicao} onChange={(e) => setEdicao(e.target.value)}>
-                <option value="todas">Todos os nomes (atual + históricos)</option>
-                {(linhaAtual?.editions ?? []).map((ed) => (
-                  <option key={ed.id} value={ed.id}>
-                    {ed.label}{ed.current ? ' (atual)' : ''}
-                  </option>
-                ))}
               </select>
             </div>
 
@@ -186,6 +183,15 @@ export function App() {
             <div className="campo">
               <label htmlFor="ate">Data final</label>
               <input id="ate" type="date" value={ate} min={de} onChange={(e) => setAte(e.target.value)} />
+            </div>
+
+            <div className="campo" style={{ minWidth: 260 }}>
+              <label>Campanha</label>
+              <FiltroCampanhas
+                campanhas={campanhas}
+                selecionadas={campanhasSel}
+                aoMudar={setCampanhasSel}
+              />
             </div>
 
             <div className="campo">
@@ -206,6 +212,16 @@ export function App() {
               </button>
             </div>
           </div>
+
+          {campanhasSel.length > 0 && (
+            <div className="aviso info">
+              <strong>Filtrando por {campanhasSel.length} campanha(s).</strong> O{' '}
+              <strong>custo</strong> é exato: vem das linhas dessas campanhas na planilha de tráfego. Já o{' '}
+              <strong>faturamento</strong> não pode ser separado por campanha, porque a aba de compradores
+              não registra de qual campanha veio cada venda — então ele mostra o faturamento{' '}
+              <strong>dos eventos</strong> a que essas campanhas pertencem, no mesmo período.
+            </div>
+          )}
 
           {dados ? (
             <Painel dados={dados} />

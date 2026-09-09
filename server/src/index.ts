@@ -9,7 +9,7 @@ import { ROOT } from './config.js';
 import { computeMetrics, listDays } from './metrics.js';
 import { lookupTab } from './normalize.js';
 import { hasCredentials, listTabs, readHeader, serviceAccountEmail } from './sheets.js';
-import type { AppConfig, MetricsResponse } from '../../shared/types.js';
+import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN ?? '';
@@ -81,16 +81,57 @@ app.get('/api/metrics', (req, res) => {
     return;
   }
 
-  const { metrics, warnings } = computeMetrics(config, data, { lineId, editionId, from, to });
+  const campanhas = lerCampanhas(req.query.campanha);
+  const { metrics, warnings } = computeMetrics(config, data, { lineId, editionId, from, to, campanhas });
   const resposta: MetricsResponse = {
     metrics,
-    filtro: { lineId, editionId, from, to },
+    filtro: { lineId, editionId, from, to, campanhas },
     fetchedAt: data.fetchedAt,
     warnings: [...data.warnings, ...warnings],
     falhas: data.falhas,
     demo: !hasCredentials(),
   };
   res.json(resposta);
+});
+
+/**
+ * Lista as campanhas de trafego para alimentar o filtro.
+ * Ordenadas por custo, que e a ordem util para quem procura onde o dinheiro foi.
+ */
+app.get('/api/campanhas', (req, res) => {
+  const data = store.getData();
+  if (!data) {
+    res.status(503).json({ erro: 'As planilhas ainda nao foram lidas. Tente de novo em instantes.' });
+    return;
+  }
+  const config = store.getConfig();
+  const hoje = new Date().toISOString().slice(0, 10);
+  const from = normalizeDateParam(req.query.from, '2000-01-01');
+  const to = normalizeDateParam(req.query.to, hoje);
+
+  const rotulos = new Map(config.eventLines.map((line) => [line.id, line.label]));
+  const agrupado = new Map<string, CampanhaResumo>();
+
+  for (const row of data.traffic) {
+    if (!row.campaign.trim()) continue;
+    if (row.date && (row.date < from || row.date > to)) continue;
+    const atual = agrupado.get(row.campaign) ?? {
+      nome: row.campaign,
+      custo: 0,
+      linhas: 0,
+      lineId: row.lineId,
+      eventoLabel: row.lineId ? (rotulos.get(row.lineId) ?? null) : null,
+    };
+    atual.custo += row.cost;
+    atual.linhas += 1;
+    agrupado.set(row.campaign, atual);
+  }
+
+  const campanhas = [...agrupado.values()]
+    .map((item) => ({ ...item, custo: Math.round((item.custo + Number.EPSILON) * 100) / 100 }))
+    .sort((a, b) => b.custo - a.custo);
+
+  res.json({ campanhas, periodo: { from, to } });
 });
 
 app.get('/api/config', (_req, res) => {
@@ -218,6 +259,13 @@ server.listen(PORT, () => {
     console.log('[servidor] MODO DEMONSTRACAO: configure a chave do Google para ver os numeros reais.');
   }
 });
+
+/** Aceita ?campanha=A&campanha=B e tambem uma unica ocorrencia. */
+function lerCampanhas(valor: unknown): string[] {
+  if (Array.isArray(valor)) return valor.map((item) => String(item)).filter((item) => item.trim() !== '');
+  if (typeof valor === 'string' && valor.trim() !== '') return [valor];
+  return [];
+}
 
 function normalizeDateParam(value: unknown, fallback: string): string {
   const raw = String(value ?? '').trim();

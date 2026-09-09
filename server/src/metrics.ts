@@ -22,6 +22,22 @@ export interface MetricsFilter {
   editionId: string | null;
   from: string;
   to: string;
+  /**
+   * Nomes de campanha selecionados. Vazio = todas.
+   *
+   * ATENCAO ao ler os numeros: o custo sai da planilha de trafego, que tem o
+   * nome da campanha em cada linha, entao ele e exato por campanha. Ja a aba de
+   * compradores NAO tem coluna de campanha (confirmado: DATA DA VENDA, HORARIO,
+   * EVENTO, NOME, TELEFONE, EMAIL, CPF, TIPO DE INGRESSO, EMBAIXADOR, FORMS).
+   * Logo, faturamento nao pode ser atribuido a uma campanha: o que este filtro
+   * faz e restringir o faturamento aos EVENTOS das campanhas escolhidas.
+   */
+  campanhas: string[];
+}
+
+/** Nomes de campanha normalizados para comparacao, evitando diferenca de caixa/espaco. */
+function chaveCampanha(nome: string): string {
+  return nome.trim().toLowerCase();
 }
 
 /** Aceita a linha se ela pertence a linha de evento (e a edicao, quando escolhida). */
@@ -48,11 +64,31 @@ export function computeMetrics(
   const warnings: string[] = [];
   const price = config.ticketPrice;
 
+  // Campanhas escolhidas restringem tambem os eventos considerados, porque e o
+  // unico vinculo que existe entre campanha e venda: o evento a que ela pertence.
+  const selecionadas = new Set(filter.campanhas.map(chaveCampanha));
+  const eventosDasCampanhas =
+    selecionadas.size === 0
+      ? null
+      : new Set(
+          data.traffic
+            .filter((row) => selecionadas.has(chaveCampanha(row.campaign)) && row.lineId)
+            .map((row) => row.lineId as string),
+        );
+
+  const noEscopoDasCampanhas = (lineId: string | null): boolean =>
+    eventosDasCampanhas === null || (lineId !== null && eventosDasCampanhas.has(lineId));
+
   const leads = data.leads.filter(
-    (row) => matchesFilter(filter, row.lineId, row.editionId) && inRange(row.date, filter.from, filter.to),
+    (row) =>
+      matchesFilter(filter, row.lineId, row.editionId) &&
+      noEscopoDasCampanhas(row.lineId) &&
+      inRange(row.date, filter.from, filter.to),
   );
 
-  const buyersOfEvent = data.buyers.filter((row) => matchesFilter(filter, row.lineId, row.editionId));
+  const buyersOfEvent = data.buyers.filter(
+    (row) => matchesFilter(filter, row.lineId, row.editionId) && noEscopoDasCampanhas(row.lineId),
+  );
   const buyers = buyersOfEvent.filter((row) => inRange(row.date, filter.from, filter.to));
 
   // Apontar as linhas: sem elas o aviso obriga a procurar a agulha no palheiro.
@@ -85,8 +121,12 @@ export function computeMetrics(
     );
   }
 
+  // O custo, esse sim, e filtrado pelas campanhas exatas escolhidas.
   const traffic = data.traffic.filter(
-    (row) => matchesFilter(filter, row.lineId, row.editionId) && inRange(row.date, filter.from, filter.to),
+    (row) =>
+      matchesFilter(filter, row.lineId, row.editionId) &&
+      (selecionadas.size === 0 || selecionadas.has(chaveCampanha(row.campaign))) &&
+      inRange(row.date, filter.from, filter.to),
   );
 
   // Uma contagem por tipo configurado. A lista de tipos e editavel pela
