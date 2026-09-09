@@ -352,3 +352,38 @@ test('Resultado e sempre faturamento menos custo', () => {
   const { metrics } = computeMetrics(config, datasetCampanhas, escolha);
   assert.equal(metrics.retorno, round(metrics.faturamentoLiquido - metrics.custoCampanha));
 });
+
+test('VIP duplo e triplo valem 2x e 3x o VIP, e levam 2 e 3 pessoas', () => {
+  const comVips = {
+    ...dataset,
+    buyers: [...dataset.buyers, compra('2026-09-01', 'vip-duplo'), compra('2026-09-01', 'vip-triplo')],
+  };
+  const base = computeMetrics(config, dataset, filtro).metrics;
+  const com = computeMetrics(config, comVips, filtro).metrics;
+
+  // 594,00 + 891,00
+  assert.equal(round(com.faturamentoLiquido - base.faturamentoLiquido), 1485);
+  assert.equal(com.participantes - base.participantes, 5, '2 cadeiras + 3 cadeiras');
+  assert.equal(qtd(com, 'vip-duplo'), 1);
+  assert.equal(qtd(com, 'vip-triplo'), 1);
+});
+
+test('os tipos aparecem no painel na ordem pedida', () => {
+  const { metrics } = computeMetrics(config, dataset, filtro);
+  assert.deepEqual(
+    metrics.ingressos.map((t) => t.id).slice(0, 6),
+    ['individual', 'duplo', 'triplo', 'vip', 'vip-duplo', 'vip-triplo'],
+  );
+});
+
+test('VIP duplo e triplo tambem cobram acompanhante', () => {
+  // 1 cadeira extra do VIP duplo + 2 do VIP triplo, alem do duplo e triplo comuns.
+  const comVips = {
+    ...dataset,
+    buyers: [...dataset.buyers, compra('2026-09-01', 'vip-duplo'), compra('2026-09-01', 'vip-triplo')],
+  };
+  const { warnings } = computeMetrics(config, comVips, filtro);
+  const aviso = warnings.find((w) => w.includes('acompanhante'));
+  assert.ok(aviso);
+  assert.match(aviso, /comportam 6 acompanhante/);
+});

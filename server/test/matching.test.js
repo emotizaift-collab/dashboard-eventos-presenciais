@@ -130,3 +130,17 @@ test('os tipos vistos no dado real da IFT sao classificados certo', () => {
     assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
   }
 });
+
+test('VIP duplo e VIP triplo nao sao confundidos com o VIP simples', () => {
+  // O alias mais longo tem de ganhar: "vip duplo" nao pode cair em "vip".
+  assert.equal(matchTicketKind(matcher, 'VIP'), 'vip');
+  assert.equal(matchTicketKind(matcher, 'Vip'), 'vip');
+  assert.equal(matchTicketKind(matcher, 'VIP duplo'), 'vip-duplo');
+  assert.equal(matchTicketKind(matcher, 'vip dupla'), 'vip-duplo');
+  assert.equal(matchTicketKind(matcher, 'CADEIRA DUPLA VIP'), 'vip-duplo');
+  assert.equal(matchTicketKind(matcher, 'VIP triplo'), 'vip-triplo');
+  assert.equal(matchTicketKind(matcher, 'VIP 3 PESSOAS'), 'vip-triplo');
+  // E o duplo comum continua comum.
+  assert.equal(matchTicketKind(matcher, 'cadeira dupla'), 'duplo');
+  assert.equal(matchTicketKind(matcher, 'VIP - SEGUNDA CADEIRA'), 'vip-segunda-cadeira');
+});

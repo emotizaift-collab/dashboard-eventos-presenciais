@@ -41,6 +41,8 @@ antigos, separados) e por **intervalo de datas**.
   | Duplo | R$ 182,32 (calculado) | 2 |
   | Triplo | R$ 273,48 (calculado) | 3 |
   | VIP | R$ 297,00 | 1 |
+  | VIP duplo | R$ 594,00 | 2 |
+  | VIP triplo | R$ 891,00 | 3 |
   | VIP 2ª cadeira | R$ 297,00 | 1 |
   | Inteira | R$ 297,00 | 1 |
   | Convite embaixador | grátis | 0 |

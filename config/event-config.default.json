@@ -88,6 +88,33 @@
       ]
     },
     {
+      "id": "vip-duplo",
+      "label": "VIP duplo",
+      "cadeiras": 2,
+      "preco": 594.0,
+      "contaComoVenda": true,
+      "aliases": [
+        "vip duplo",
+        "vip dupla",
+        "cadeira dupla vip",
+        "vip 2 pessoas",
+        "vip duas pessoas"
+      ]
+    },
+    {
+      "id": "vip-triplo",
+      "label": "VIP triplo",
+      "cadeiras": 3,
+      "preco": 891.0,
+      "contaComoVenda": true,
+      "aliases": [
+        "vip triplo",
+        "vip tripla",
+        "vip 3 pessoas",
+        "vip tres pessoas"
+      ]
+    },
+    {
       "id": "vip-segunda-cadeira",
       "label": "VIP 2ª cadeira",
       "cadeiras": 1,
