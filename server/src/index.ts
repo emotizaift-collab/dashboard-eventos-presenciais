@@ -231,9 +231,21 @@ app.post('/api/refresh', async (_req, res) => {
 });
 
 // --- Interface ---
+/**
+ * Rota /api desconhecida responde 404 em JSON.
+ *
+ * Sem isto, o catch-all da interface devolvia o index.html com status 200 para
+ * qualquer caminho — inclusive /api/coisa-que-nao-existe. Um endpoint com erro
+ * de digitacao, ou que ainda nao subiu no deploy, parecia estar funcionando.
+ */
+app.use('/api', (req, res) => {
+  res.status(404).json({ erro: `rota nao encontrada: ${req.method} /api${req.path}` });
+});
+
 const webDist = path.join(ROOT, 'dist', 'web');
 if (fs.existsSync(webDist)) {
   app.use(express.static(webDist));
+  // O resto e a interface: qualquer caminho devolve o index para o React rotear.
   app.get('*', (_req, res) => res.sendFile(path.join(webDist, 'index.html')));
 }
 
