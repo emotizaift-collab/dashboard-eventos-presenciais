@@ -120,9 +120,11 @@ test('os tipos vistos no dado real da IFT sao classificados certo', () => {
   const casos = [
     ['Vip', 'vip'],
     ['VIP', 'vip'],
-    // O alias mais longo tem de ganhar de "vip", senao a 2a cadeira viraria um VIP comum.
-    ['VIP - SEGUNDA CADEIRA', 'vip-segunda-cadeira'],
-    ['Inteira', 'inteira'],
+    // "Inteira" e "VIP - SEGUNDA CADEIRA" foram absorvidos pelo VIP: mesmo
+    // preco (R$ 297) e mesma ocupacao (1 cadeira), entao os blocos separados
+    // sairam da tela sem mudar nenhum numero.
+    ['VIP - SEGUNDA CADEIRA', 'vip'],
+    ['Inteira', 'vip'],
     // "CADE DE" e a grafia com um erro de digitacao de "CAD DE".
     ['CADE DE CARLOS CABREIRA', 'acompanhante'],
   ];
@@ -142,5 +144,16 @@ test('VIP duplo e VIP triplo nao sao confundidos com o VIP simples', () => {
   assert.equal(matchTicketKind(matcher, 'VIP 3 PESSOAS'), 'vip-triplo');
   // E o duplo comum continua comum.
   assert.equal(matchTicketKind(matcher, 'cadeira dupla'), 'duplo');
-  assert.equal(matchTicketKind(matcher, 'VIP - SEGUNDA CADEIRA'), 'vip-segunda-cadeira');
+  assert.equal(matchTicketKind(matcher, 'VIP - SEGUNDA CADEIRA'), 'vip');
+});
+
+test('"Inteira" e "VIP - SEGUNDA CADEIRA" passam a contar como VIP', () => {
+  // Os dois blocos sairam da tela, mas as linhas continuam valendo R$ 297 e
+  // 1 cadeira — os apelidos foram absorvidos pelo VIP para nao sumir dinheiro.
+  assert.equal(matchTicketKind(matcher, 'Inteira'), 'vip');
+  assert.equal(matchTicketKind(matcher, 'VIP - SEGUNDA CADEIRA'), 'vip');
+  assert.equal(matchTicketKind(matcher, 'Vip'), 'vip');
+  // E os VIP com mais cadeiras continuam distintos.
+  assert.equal(matchTicketKind(matcher, 'VIP duplo'), 'vip-duplo');
+  assert.equal(matchTicketKind(matcher, 'VIP triplo'), 'vip-triplo');
 });

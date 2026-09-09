@@ -84,7 +84,13 @@
       "contaComoVenda": true,
       "aliases": [
         "vip",
-        "ingresso vip"
+        "ingresso vip",
+        "inteira",
+        "inteiro",
+        "ingresso inteiro",
+        "vip segunda cadeira",
+        "vip 2 cadeira",
+        "segunda cadeira vip"
       ]
     },
     {
@@ -112,30 +118,6 @@
         "vip tripla",
         "vip 3 pessoas",
         "vip tres pessoas"
-      ]
-    },
-    {
-      "id": "vip-segunda-cadeira",
-      "label": "VIP 2ª cadeira",
-      "cadeiras": 1,
-      "preco": 297.0,
-      "contaComoVenda": true,
-      "aliases": [
-        "vip segunda cadeira",
-        "vip 2 cadeira",
-        "segunda cadeira vip"
-      ]
-    },
-    {
-      "id": "inteira",
-      "label": "Inteira",
-      "cadeiras": 1,
-      "preco": 297.0,
-      "contaComoVenda": true,
-      "aliases": [
-        "inteira",
-        "inteiro",
-        "ingresso inteiro"
       ]
     },
     {

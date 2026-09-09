@@ -86,6 +86,7 @@ test('a serie tem um ponto por dia do intervalo, mesmo sem movimento', () => {
   const { metrics } = computeMetrics(config, dataset, filtro);
   assert.equal(metrics.serie.length, 3);
   assert.deepEqual(metrics.serie.map((p) => p.date), ['2026-09-01', '2026-09-02', '2026-09-03']);
+  assert.deepEqual(metrics.serie.map((p) => p.dateFim), ['2026-09-01', '2026-09-02', '2026-09-03']);
   assert.deepEqual(metrics.serie.map((p) => p.leads), [2, 1, 0]);
   // cortesia nao conta como venda
   assert.deepEqual(metrics.serie.map((p) => p.vendas), [2, 2, 0]);
@@ -223,8 +224,8 @@ test('VIP usa o preco proprio, e nao o preco base', () => {
     buyers: [
       ...dataset.buyers,
       compra('2026-09-01', 'vip'),
-      compra('2026-09-01', 'inteira'),
-      compra('2026-09-02', 'vip-segunda-cadeira'),
+      compra('2026-09-01', 'vip'),
+      compra('2026-09-02', 'vip'),
     ],
   };
   const base = computeMetrics(config, dataset, filtro).metrics;
@@ -232,15 +233,15 @@ test('VIP usa o preco proprio, e nao o preco base', () => {
 
   // 3 ingressos de R$ 297,00 a mais
   assert.equal(round(com.faturamentoLiquido - base.faturamentoLiquido), 891);
-  assert.equal(qtd(com, 'vip'), 1);
-  assert.equal(qtd(com, 'inteira'), 1);
-  assert.equal(qtd(com, 'vip-segunda-cadeira'), 1);
+  assert.equal(qtd(com, 'vip'), 3);
   // Cada um leva 1 pessoa
   assert.equal(com.participantes - base.participantes, 3);
 });
 
 test('a 2a cadeira do VIP e venda separada: entra no faturamento e no grafico', () => {
-  const comVip = { ...dataset, buyers: [...dataset.buyers, compra('2026-09-01', 'vip-segunda-cadeira')] };
+  // Confirmado com a IFT: diferente do acompanhante de duplo, a segunda cadeira
+  // do VIP e cobrada a parte. Hoje ela e classificada como um VIP.
+  const comVip = { ...dataset, buyers: [...dataset.buyers, compra('2026-09-01', 'vip')] };
   const base = computeMetrics(config, dataset, filtro).metrics;
   const com = computeMetrics(config, comVip, filtro).metrics;
   assert.equal(round(com.faturamentoLiquido - base.faturamentoLiquido), 297);
@@ -386,4 +387,54 @@ test('VIP duplo e triplo tambem cobram acompanhante', () => {
   const aviso = warnings.find((w) => w.includes('acompanhante'));
   assert.ok(aviso);
   assert.match(aviso, /comportam 6 acompanhante/);
+});
+
+// --- Agrupamento do grafico ---
+
+const seriePara = (from, to) =>
+  computeMetrics(config, { ...dataset, leads: [], buyers: [], traffic: [] }, {
+    ...filtro, from, to,
+  }).metrics.serie;
+
+test('ate 31 dias o grafico mostra um ponto por dia', () => {
+  const trintaUm = seriePara('2026-09-01', '2026-10-01'); // 31 dias
+  assert.equal(trintaUm.length, 31);
+  assert.ok(trintaUm.every((p) => p.date === p.dateFim), 'nenhum ponto pode agrupar');
+  assert.equal(trintaUm[0].date, '2026-09-01');
+  assert.equal(trintaUm[30].date, '2026-10-01');
+});
+
+test('a partir de 32 dias os dias sao agrupados de tres em tres', () => {
+  const trintaDois = seriePara('2026-09-01', '2026-10-02'); // 32 dias
+  assert.equal(trintaDois.length, 11, '32 dias em blocos de 3 = 11 pontos');
+  assert.equal(trintaDois[0].date, '2026-09-01');
+  assert.equal(trintaDois[0].dateFim, '2026-09-03');
+  // O ultimo bloco fica incompleto quando o total nao e multiplo de 3.
+  assert.equal(trintaDois[10].date, '2026-10-01');
+  assert.equal(trintaDois[10].dateFim, '2026-10-02');
+});
+
+test('agrupar soma os valores dos dias do bloco, sem perder nada', () => {
+  const leadsDiarios = [];
+  const cursor = new Date('2026-09-01T00:00:00Z');
+  for (let i = 0; i < 33; i += 1) {
+    const dia = cursor.toISOString().slice(0, 10);
+    leadsDiarios.push(lead(dia), lead(dia)); // 2 leads por dia, 33 dias = 66
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  const { metrics } = computeMetrics(
+    config,
+    { ...dataset, leads: leadsDiarios, buyers: [], traffic: [] },
+    { ...filtro, from: '2026-09-01', to: '2026-10-03' },
+  );
+  assert.equal(metrics.serie.length, 11);
+  assert.ok(metrics.serie.every((p) => p.leads === 6), 'cada bloco de 3 dias tem 6 leads');
+  assert.equal(metrics.serie.reduce((t, p) => t + p.leads, 0), 66, 'o total nao pode mudar');
+  assert.equal(metrics.leadsTotal, 66);
+});
+
+test('um dia so continua sendo um ponto', () => {
+  const umDia = seriePara('2026-09-01', '2026-09-01');
+  assert.equal(umDia.length, 1);
+  assert.equal(umDia[0].date, umDia[0].dateFim);
 });

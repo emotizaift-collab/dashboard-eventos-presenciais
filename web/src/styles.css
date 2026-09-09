@@ -99,7 +99,8 @@ body {
   border-radius: 12px; padding: 16px 18px;
 }
 .bloco h3 { margin: 0 0 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--texto-fraco); }
-.linhas { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
+/* Tres colunas fixas: os tres ingressos normais em cima, os tres VIP embaixo. */
+.linhas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .linha-item { background: var(--painel-2); border-radius: 9px; padding: 12px; text-align: center; }
 .linha-item .n { font-size: 22px; font-weight: 700; }
 .linha-item .t { font-size: 11px; color: var(--texto-fraco); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.3; }

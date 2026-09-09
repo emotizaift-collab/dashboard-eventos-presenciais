@@ -118,8 +118,14 @@ export interface DataSet {
   falhas: string[];
 }
 
+/**
+ * Um ponto do grafico. Ate 31 dias no filtro, e um dia. Acima disso os dias
+ * sao agrupados de tres em tres, senao o eixo vira uma parede de rotulos.
+ * dateFim marca o ultimo dia do grupo; num ponto de um dia so, e igual a date.
+ */
 export interface DailyPoint {
   date: string;
+  dateFim: string;
   leads: number;
   vendas: number;
   custo: number;

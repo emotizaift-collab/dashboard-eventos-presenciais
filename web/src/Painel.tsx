@@ -11,7 +11,15 @@ interface Props {
 
 export function Painel({ dados }: Props) {
   const m = dados.metrics;
-  const serie = m.serie.map((ponto) => ({ ...ponto, rotulo: diaCurto(ponto.date) }));
+  // Quando o servidor agrupa (acima de 31 dias no filtro), o rotulo vira a
+  // faixa: "01/09-03/09". Ate 31 dias cada ponto e um dia.
+  const agrupado = m.serie.some((ponto) => ponto.date !== ponto.dateFim);
+  const serie = m.serie.map((ponto) => ({
+    ...ponto,
+    rotulo: ponto.date === ponto.dateFim
+      ? diaCurto(ponto.date)
+      : `${diaCurto(ponto.date)}-${diaCurto(ponto.dateFim)}`,
+  }));
 
   return (
     <>
@@ -58,11 +66,28 @@ export function Painel({ dados }: Props) {
       </div>
 
       <div className="grafico">
-        <h3>Leads e vendas por dia</h3>
+        <h3>
+          Leads e vendas {agrupado ? 'a cada 3 dias' : 'por dia'}
+          {agrupado && (
+            <span style={{ textTransform: 'none', letterSpacing: 0, marginLeft: 10, fontWeight: 400 }}>
+              — o período tem mais de 31 dias, então cada ponto soma 3 dias
+            </span>
+          )}
+        </h3>
         <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={serie} margin={{ top: 5, right: 12, left: -12, bottom: 5 }}>
+          <LineChart data={serie} margin={{ top: 5, right: 12, left: -12, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2a3348" />
-            <XAxis dataKey="rotulo" stroke="#93a0bb" fontSize={12} tickMargin={8} minTickGap={18} />
+            <XAxis
+              dataKey="rotulo"
+              stroke="#93a0bb"
+              fontSize={serie.length > 20 ? 10 : 12}
+              tickMargin={8}
+              interval={serie.length <= 31 ? 0 : 'preserveStartEnd'}
+              minTickGap={serie.length <= 31 ? 0 : 28}
+              angle={serie.length > 12 ? -45 : 0}
+              textAnchor={serie.length > 12 ? 'end' : 'middle'}
+              height={serie.length > 12 ? 68 : 30}
+            />
             <YAxis stroke="#93a0bb" fontSize={12} allowDecimals={false} />
             <Tooltip
               contentStyle={{
@@ -71,7 +96,10 @@ export function Painel({ dados }: Props) {
               }}
               labelFormatter={(rotulo: string) => {
                 const ponto = serie.find((item) => item.rotulo === rotulo);
-                return ponto ? dataBr(ponto.date) : rotulo;
+                if (!ponto) return rotulo;
+                return ponto.date === ponto.dateFim
+                  ? dataBr(ponto.date)
+                  : `${dataBr(ponto.date)} a ${dataBr(ponto.dateFim)}`;
               }}
             />
             <Legend wrapperStyle={{ fontSize: 13, paddingTop: 8 }} />

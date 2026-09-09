@@ -26,7 +26,10 @@ sem ninguém precisar recarregar a página.
 | **Individual / Duplo / Triplo** | Quantos ingressos de cada tipo foram vendidos |
 | **Embaixador / Convidados / Total** | Quantos embaixadores diferentes trouxeram gente, e quantos convidados vieram |
 
-Mais um gráfico de linha com **leads por dia** e **vendas por dia**.
+Mais um gráfico de linha com **leads** e **vendas**. Até 31 dias no filtro ele
+mostra **dia a dia**, com todos os dias no eixo. Acima disso, agrupa de **3 em 3
+dias** — o total continua o mesmo, só a granularidade muda, e o título do gráfico
+avisa quando isso acontece.
 
 Você pode filtrar por **evento**, por **nome/edição** (o nome atual ou os nomes
 antigos, separados) e por **intervalo de datas**.
@@ -43,10 +46,12 @@ antigos, separados) e por **intervalo de datas**.
   | VIP | R$ 297,00 | 1 |
   | VIP duplo | R$ 594,00 | 2 |
   | VIP triplo | R$ 891,00 | 3 |
-  | VIP 2ª cadeira | R$ 297,00 | 1 |
-  | Inteira | R$ 297,00 | 1 |
   | Convite embaixador | grátis | 0 |
   | Acompanhante | não é venda | 0 |
+
+- Os textos `Inteira` e `VIP - SEGUNDA CADEIRA`, que aparecem na planilha, são
+  lidos como **VIP**: têm o mesmo preço (R$ 297,00) e a mesma ocupação (1 cadeira),
+  então deixaram de ter bloco próprio no painel sem que nenhum número mudasse.
 
 - **Preço "calculado"** quer dizer preço base × cadeiras. Mudar o preço base move
   individual, duplo e triplo de uma vez; VIP e Inteira têm valor próprio e não são

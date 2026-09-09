@@ -230,12 +230,36 @@ function buildSeries(
     custoByDay.set(row.date, (custoByDay.get(row.date) ?? 0) + row.cost);
   }
 
-  return days.map((date) => ({
+  const pontos: DailyPoint[] = days.map((date) => ({
     date,
+    dateFim: date,
     leads: leadsByDay.get(date) ?? 0,
     vendas: vendasByDay.get(date) ?? 0,
     custo: round2(custoByDay.get(date) ?? 0),
   }));
+
+  return days.length > DIAS_ATE_AGRUPAR ? agrupar(pontos, TAMANHO_DO_GRUPO) : pontos;
+}
+
+/** Ate este numero de dias o grafico mostra dia a dia. */
+const DIAS_ATE_AGRUPAR = 31;
+/** Acima disso, cada ponto passa a somar este tanto de dias. */
+const TAMANHO_DO_GRUPO = 3;
+
+/** Junta os dias em blocos, somando os valores de cada bloco. */
+function agrupar(pontos: DailyPoint[], tamanho: number): DailyPoint[] {
+  const saida: DailyPoint[] = [];
+  for (let i = 0; i < pontos.length; i += tamanho) {
+    const bloco = pontos.slice(i, i + tamanho);
+    saida.push({
+      date: bloco[0].date,
+      dateFim: bloco[bloco.length - 1].date,
+      leads: bloco.reduce((total, ponto) => total + ponto.leads, 0),
+      vendas: bloco.reduce((total, ponto) => total + ponto.vendas, 0),
+      custo: round2(bloco.reduce((total, ponto) => total + ponto.custo, 0)),
+    });
+  }
+  return saida;
 }
 
 function countByDay(dates: Array<string | null>): Map<string, number> {
@@ -247,14 +271,14 @@ function countByDay(dates: Array<string | null>): Map<string, number> {
   return map;
 }
 
-/** Limita a 400 dias para nao gerar um grafico gigante por engano. */
+/** Limita a 1100 dias (cerca de 3 anos) para um intervalo digitado errado nao explodir. */
 export function listDays(from: string, to: string): string[] {
   const days: string[] = [];
   const start = new Date(`${from}T00:00:00Z`);
   const end = new Date(`${to}T00:00:00Z`);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return days;
   const cursor = new Date(start);
-  while (cursor <= end && days.length < 400) {
+  while (cursor <= end && days.length < 1100) {
     days.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
