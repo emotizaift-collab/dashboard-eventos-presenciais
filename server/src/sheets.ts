@@ -97,6 +97,17 @@ export async function listTabs(spreadsheetId: string): Promise<string[]> {
     .filter((title): title is string => Boolean(title));
 }
 
+/** Le so a primeira linha de uma aba, para conferir os nomes das colunas. */
+export async function readHeader(spreadsheetId: string, tab: string): Promise<string[]> {
+  const client = getClient();
+  const range = encodeURIComponent(`'${tab.replace(/'/g, "''")}'!1:1`);
+  const url =
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}` +
+    '?valueRenderOption=FORMATTED_VALUE';
+  const response = await client.request<{ values?: string[][] }>({ url });
+  return response.data.values?.[0] ?? [];
+}
+
 /** E-mail da conta de robo — o usuario precisa compartilhar as planilhas com ele. */
 export function serviceAccountEmail(): string | null {
   const key = readCredentials();

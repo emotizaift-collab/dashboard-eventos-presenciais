@@ -8,7 +8,7 @@ import { store } from './store.js';
 import { ROOT } from './config.js';
 import { computeMetrics, listDays } from './metrics.js';
 import { lookupTab } from './normalize.js';
-import { hasCredentials, listTabs, serviceAccountEmail } from './sheets.js';
+import { hasCredentials, listTabs, readHeader, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, MetricsResponse } from '../../shared/types.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -138,6 +138,19 @@ app.get('/api/diagnostics', async (_req, res) => {
         vistos.set(id, `erro: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
+    // Nomes reais das colunas: sem isso, "existe a coluna X?" so da para chutar.
+    const cabecalhos = new Map<string, string[] | string>();
+    await Promise.all(
+      ids.map(async ([, id, aba]) => {
+        const chave = `${id}::${aba}`;
+        try {
+          cabecalhos.set(chave, await readHeader(id, aba));
+        } catch (error) {
+          cabecalhos.set(chave, `erro: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }),
+    );
+
     resultado.planilhas = ids.map(([fonte, id, aba]) => {
       const abas = vistos.get(id);
       const busca = Array.isArray(abas) ? lookupTab(aba, abas) : null;
@@ -151,6 +164,7 @@ app.get('/api/diagnostics', async (_req, res) => {
         grafiaExata: busca ? busca.exata : null,
         nomeRealDaAba: busca ? busca.nomeReal : null,
         sugestao: busca && !busca.encontrada ? busca.sugestao : null,
+        colunas: cabecalhos.get(`${id}::${aba}`) ?? null,
       };
     });
   }
