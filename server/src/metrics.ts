@@ -179,6 +179,28 @@ export function computeMetrics(
     );
   }
 
+  // Convidado so e contado pela coluna do embaixador. Um convite sem esse nome
+  // preenchido nao entra em Participantes — a pessoa vai ao evento e some da
+  // conta. Nao da para deduzir o nome, entao o painel aponta e a equipe corrige.
+  const tiposDeCortesia = new Set(
+    config.ticketTypes
+      .filter((tipo) => !tipo.contaComoVenda && !ehAcompanhante(tipo.id))
+      .map((tipo) => tipo.id),
+  );
+  const cortesiaSemEmbaixador = buyers.filter(
+    (row) => row.ticketKind !== null && tiposDeCortesia.has(row.ticketKind) && row.ambassador.trim() === '',
+  );
+  if (cortesiaSemEmbaixador.length > 0) {
+    const linhas = cortesiaSemEmbaixador.map((row) => row.linha).sort((a, b) => a - b);
+    const mostradas = linhas.slice(0, 15).join(', ');
+    const resto = linhas.length > 15 ? ` e mais ${linhas.length - 15}` : '';
+    warnings.push(
+      `${cortesiaSemEmbaixador.length} convite(s) de embaixador estao sem o nome do embaixador preenchido, ` +
+        `entao esses convidados nao entram na contagem de Participantes. ` +
+        `Na aba de compradores, preencha a coluna do embaixador nas linhas: ${mostradas}${resto}.`,
+    );
+  }
+
   const custoCampanha = round2(traffic.reduce((total, row) => total + row.cost, 0));
   const faturamentoLiquido = round2(
     ingressos.reduce((total, item) => total + item.faturamento, 0),

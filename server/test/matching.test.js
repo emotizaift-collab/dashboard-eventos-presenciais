@@ -185,3 +185,31 @@ test('o tipo de ingresso e lido por palavras, em qualquer ordem, sem se perder e
     assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
   }
 });
+
+test('as grafias reais da planilha da IFT sao todas classificadas certo', () => {
+  // Lista extraida da propria coluna TIPO DE INGRESSO pelo /api/diagnostics.
+  const reais = [
+    ['INDIVIDUAL', 'individual'],
+    ['Ingresso Individual', 'individual'],
+    // "VIP - INDIVIDUAL" caia em individual e cobrava R$ 91,16 no lugar de R$ 297.
+    ['VIP - INDIVIDUAL', 'vip'],
+    ['2 PESSOAS', 'duplo'],
+    ['Ingresso Duplo', 'duplo'],
+    ['3 PESSOAS', 'triplo'],
+    ['Ingresso Triplo', 'triplo'],
+    ['Vip', 'vip'],
+    ['INGRESSO VIP', 'vip'],
+    ['Inteira', 'vip'],
+    ['VIP - SEGUNDA CADEIRA', 'vip'],
+    ['INGRESSO VIP DUPLO', 'vip-duplo'],
+    ['INGRESSO VIP TRIPLO', 'vip-triplo'],
+    ['CONVITE EMBAIXADOR MÃE', 'cortesia'],
+    ['CONVITE EMBAIXADOR PAI', 'cortesia'],
+    ['CONVITE EMBAIXADORA PAI', 'cortesia'],
+    ['CAD DA LUCIELMA', 'acompanhante'],
+    ['CADE DE CARLOS CABREIRA', 'acompanhante'],
+  ];
+  for (const [texto, esperado] of reais) {
+    assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
+  }
+});

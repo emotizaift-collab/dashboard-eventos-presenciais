@@ -438,3 +438,29 @@ test('um dia so continua sendo um ponto', () => {
   assert.equal(umDia.length, 1);
   assert.equal(umDia[0].date, umDia[0].dateFim);
 });
+
+test('convite de embaixador sem o nome do embaixador e apontado, com as linhas', () => {
+  // O convidado só é contado pela coluna do embaixador. Sem esse nome, a
+  // pessoa vai ao evento e não aparece em Participantes.
+  const semNome = { ...compra('2026-09-01', 'cortesia', ''), linha: 210 };
+  const comNome = compra('2026-09-01', 'cortesia', 'Ana Paula');
+  const { metrics, warnings } = computeMetrics(
+    config,
+    { ...dataset, buyers: [...dataset.buyers, semNome, comNome] },
+    filtro,
+  );
+  const aviso = warnings.find((w) => w.includes('sem o nome do embaixador'));
+  assert.ok(aviso, 'precisa apontar o convite sem embaixador');
+  assert.match(aviso, /linhas: 210/);
+  // O que tem nome continua contando normalmente.
+  assert.ok(metrics.embaixador.convidados >= 1);
+});
+
+test('acompanhante sem nome de embaixador nao vira alarme falso', () => {
+  const { warnings } = computeMetrics(
+    config,
+    { ...dataset, buyers: [...dataset.buyers, compra('2026-09-01', 'acompanhante', '')] },
+    filtro,
+  );
+  assert.ok(!warnings.some((w) => w.includes('sem o nome do embaixador')));
+});
