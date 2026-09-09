@@ -210,6 +210,26 @@ app.get('/api/diagnostics', async (_req, res) => {
     });
   }
 
+  // Todo texto que aparece na coluna de tipo de ingresso, e como o painel leu
+  // cada um. E a forma direta de conferir "a planilha diz X, o painel conta Y"
+  // sem precisar abrir a planilha.
+  const dados = store.getData();
+  if (dados) {
+    const porValor = new Map<string, { valor: string; linhas: number; lidoComo: string }>();
+    for (const row of dados.buyers) {
+      const valor = row.rawTicketType.trim();
+      if (!valor) continue;
+      const atual = porValor.get(valor.toLowerCase()) ?? {
+        valor,
+        linhas: 0,
+        lidoComo: row.ticketKind ?? 'NAO RECONHECIDO',
+      };
+      atual.linhas += 1;
+      porValor.set(valor.toLowerCase(), atual);
+    }
+    resultado.tiposDeIngressoNaPlanilha = [...porValor.values()].sort((a, b) => b.linhas - a.linhas);
+  }
+
   res.json(resultado);
 });
 

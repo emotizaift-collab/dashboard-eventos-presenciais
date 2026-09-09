@@ -157,3 +157,31 @@ test('"Inteira" e "VIP - SEGUNDA CADEIRA" passam a contar como VIP', () => {
   assert.equal(matchTicketKind(matcher, 'VIP duplo'), 'vip-duplo');
   assert.equal(matchTicketKind(matcher, 'VIP triplo'), 'vip-triplo');
 });
+
+test('o tipo de ingresso e lido por palavras, em qualquer ordem, sem se perder em palavra generica', () => {
+  const casos = [
+    // A grafia com "ingresso" na frente derrubava o casamento: "ingresso vip"
+    // é mais longo que "vip triplo" e vencia, transformando um ingresso de
+    // R$ 891 num de R$ 297 sem nenhum aviso.
+    ['INGRESSO VIP TRIPLO', 'vip-triplo'],
+    ['INGRESSO VIP DUPLO', 'vip-duplo'],
+    ['INGRESSO VIP', 'vip'],
+    // Ordem invertida das palavras.
+    ['TRIPLO VIP', 'vip-triplo'],
+    ['CADEIRA DUPLA VIP', 'vip-duplo'],
+    ['CADEIRA TRIPLA VIP', 'vip-triplo'],
+    // Formas curtas.
+    ['VIP 3', 'vip-triplo'],
+    ['VIP 2', 'vip-duplo'],
+    ['VIP TRIO', 'vip-triplo'],
+    // E os tipos comuns continuam comuns.
+    ['ingresso triplo', 'triplo'],
+    ['ingresso duplo', 'duplo'],
+    ['Ingresso Individual', 'individual'],
+    ['cadeira dupla', 'duplo'],
+    ['3 pessoas', 'triplo'],
+  ];
+  for (const [texto, esperado] of casos) {
+    assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
+  }
+});
