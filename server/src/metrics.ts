@@ -242,6 +242,25 @@ export function computeMetrics(
   const leadsSemFonte = !data.leads.some(
     (row) => matchesFilter(filter, row.lineId, row.editionId) && noEscopoDasCampanhas(row.lineId),
   );
+
+  // Um balde que inclua este evento significa que ha leads dele na planilha,
+  // so que embolados com os de outro evento. Sem isto, o painel diria que o
+  // evento nao tem lead nenhum — que e o contrario do que acontece.
+  const linhaEscolhida = filter.editionId
+    ? (config.eventLines.find((linha) =>
+        linha.editions.some((edicao) => edicao.id === filter.editionId),
+      )?.id ?? filter.lineId)
+    : filter.lineId;
+  const balde = config.eventLines.find(
+    (linha) => linha.id !== linhaEscolhida && linha.compartilhadoCom?.includes(linhaEscolhida),
+  );
+  const leadsNoBalde = balde
+    ? data.leads.filter(
+        (row) => row.lineId === balde.id && inRange(row.date, filter.from, filter.to),
+      ).length
+    : 0;
+  const leadsCompartilhados =
+    balde && leadsNoBalde > 0 ? { rotulo: balde.label, quantidade: leadsNoBalde } : null;
   const cadeirasVendidas = ingressos.reduce((total, item) => total + item.participantes, 0);
   const participantes = cadeirasVendidas + embaixadores + convidados;
   const custoPorLead = leadsTotal > 0 ? round2(custoCampanha / leadsTotal) : null;
@@ -253,6 +272,7 @@ export function computeMetrics(
       retorno,
       leadsTotal,
       leadsSemFonte,
+      leadsCompartilhados,
       participantes,
       custoPorLead,
       ingressos,

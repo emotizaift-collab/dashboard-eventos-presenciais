@@ -556,3 +556,48 @@ test('leadsSemFonte separa "zero no periodo" de "sem fonte nenhuma"', () => {
   assert.equal(comLeads.leadsTotal, 1);
   assert.equal(comLeads.leadsSemFonte, false);
 });
+
+
+/**
+ * O Dinamicas Sistemicas TEM interessados na planilha: eles estao escritos como
+ * "DAY TRAINING", que ate 03/09/2026 servia a ele e ao ANIMA Day ao mesmo
+ * tempo. Dizer "este evento nao aparece na planilha de leads" seria o contrario
+ * da verdade — e foi o que a tela chegou a dizer por um deploy.
+ */
+test('evento com leads num balde compartilhado nao e tratado como sem fonte', () => {
+  const base = { buyers: [], traffic: [], ambassadors: [], fetchedAt: '', warnings: [], falhas: [] };
+  const noBalde = (date) => ({
+    date, rawEvent: 'DAY TRAINING', editionId: 'dt-ambiguo', lineId: 'day-training-compartilhado',
+  });
+  const periodo = { from: '2026-09-01', to: '2026-09-30', campanhas: [] };
+  const dados = { ...base, leads: [noBalde('2026-09-05'), noBalde('2026-09-06')] };
+
+  // Dinamicas Sistemicas: nenhum lead proprio, mas o balde e dele tambem.
+  const ds = computeMetrics(config, dados, { ...periodo, lineId: 'dinamicas-sistemicas', editionId: null }).metrics;
+  assert.equal(ds.leadsTotal, 0);
+  assert.equal(ds.leadsSemFonte, true);
+  assert.equal(ds.leadsCompartilhados?.quantidade, 2);
+  assert.match(ds.leadsCompartilhados.rotulo, /Day Training/);
+
+  // Formacao de Palestrantes nao divide esse balde: para ele, nao ha nota.
+  const fp = computeMetrics(config, dados, { ...periodo, lineId: 'formacao-palestrantes', editionId: null }).metrics;
+  assert.equal(fp.leadsCompartilhados, null);
+  assert.equal(fp.leadsSemFonte, true);
+
+  // E o proprio balde nao aponta para si mesmo.
+  const balde = computeMetrics(config, dados, { ...periodo, lineId: 'day-training-compartilhado', editionId: null }).metrics;
+  assert.equal(balde.leadsTotal, 2);
+  assert.equal(balde.leadsCompartilhados, null);
+});
+
+test('o balde e encontrado mesmo escolhendo uma edicao, nao a linha inteira', () => {
+  // O seletor manda a edicao; a linha do evento tem de ser deduzida dela.
+  const dados = {
+    leads: [{ date: '2026-09-05', rawEvent: 'DAY TRAINING', editionId: 'dt-ambiguo', lineId: 'day-training-compartilhado' }],
+    buyers: [], traffic: [], ambassadors: [], fetchedAt: '', warnings: [], falhas: [],
+  };
+  const m = computeMetrics(config, dados, {
+    lineId: 'todos', editionId: 'ds-ed-02', from: '2026-09-01', to: '2026-09-30', campanhas: [],
+  }).metrics;
+  assert.equal(m.leadsCompartilhados?.quantidade, 1);
+});

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import type { MetricsResponse } from '../../shared/types';
+import type { Metrics, MetricsResponse } from '../../shared/types';
 import { dinheiro, numero, diaCurto, dataBr } from './format';
 
 interface Props {
@@ -55,11 +55,7 @@ export function Painel({ dados }: Props) {
       <section className="metricas">
         <Metrica rotulo="Faturamento líquido" valor={dinheiro(m.faturamentoLiquido)} />
         <Metrica rotulo="Custo de campanha" valor={dinheiro(m.custoCampanha)} />
-        <Metrica
-          rotulo="Leads"
-          valor={m.leadsSemFonte ? '—' : numero(m.leadsTotal)}
-          nota={m.leadsSemFonte ? 'Este evento não aparece na planilha de leads' : undefined}
-        />
+        <Metrica rotulo="Leads" valor={m.leadsSemFonte ? '—' : numero(m.leadsTotal)} nota={notaDosLeads(m)} />
         <Metrica rotulo="Participantes" valor={numero(m.participantes)} />
         <Metrica
           rotulo="Custo por lead"
@@ -67,7 +63,7 @@ export function Painel({ dados }: Props) {
           nota={
             m.custoPorLead === null
               ? m.leadsSemFonte
-                ? 'Não há como calcular sem fonte de leads'
+                ? 'Não há como calcular sem leads próprios'
                 : 'Sem leads no período'
               : undefined
           }
@@ -171,6 +167,24 @@ export function Painel({ dados }: Props) {
       </section>
     </>
   );
+}
+
+/**
+ * Um "0" em Leads pode significar tres coisas muito diferentes, e sozinho ele
+ * nao distingue nenhuma: deu zero no periodo, os leads deste evento estao
+ * misturados com os de outro, ou nao ha fonte de lead nenhuma para ele. As
+ * duas ultimas ja levaram a IFT a abrir chamado de bug em cima de numero certo.
+ */
+function notaDosLeads(m: Metrics): string | undefined {
+  const balde = m.leadsCompartilhados;
+  if (balde) {
+    const quantos = `${numero(balde.quantidade)} lead${balde.quantidade === 1 ? '' : 's'}`;
+    return m.leadsSemFonte
+      ? `Os leads deste evento estão em "${balde.rotulo}" (${quantos}), sem como separar`
+      : `Mais ${quantos} em "${balde.rotulo}", sem como separar`;
+  }
+  if (m.leadsSemFonte) return 'Este evento não aparece na planilha de leads';
+  return undefined;
 }
 
 function Metrica({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {

@@ -117,6 +117,17 @@ export interface EventLine {
   id: string;
   label: string;
   editions: EventEdition[];
+  /**
+   * Ids dos eventos cujos leads caem aqui dentro, misturados e sem como
+   * separar. So os "baldes" usam isto.
+   *
+   * Existe porque "este evento nao tem lead" e "os leads dele estao num monte
+   * junto com os de outro evento" sao situacoes diferentes, e a segunda nao
+   * pode aparecer como a primeira: o Dinamicas Sistemicas TEM interessados na
+   * planilha, eles so estao escritos como "DAY TRAINING", que ate 03/09/2026
+   * servia a ele e ao ANIMA Day ao mesmo tempo.
+   */
+  compartilhadoCom?: string[];
 }
 
 export interface AppConfig {
@@ -255,6 +266,12 @@ export interface Metrics {
    * e a tela e que nao dizia o porque.
    */
   leadsSemFonte: boolean;
+  /**
+   * Preenchido quando existe um balde de leads que inclui este evento. O painel
+   * mostra isso junto do numero para nao dar a entender que os leads do evento
+   * nao existem — eles existem, so nao da para separar dos do outro evento.
+   */
+  leadsCompartilhados: { rotulo: string; quantidade: number } | null;
   participantes: number;
   custoPorLead: number | null;
   /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */
