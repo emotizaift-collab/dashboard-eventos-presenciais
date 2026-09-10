@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import type { AppConfig, Metrics, ValorNaoClassificado } from '../../shared/types';
+import type { AliasConfig, AppConfig, Metrics, ValorNaoClassificado, Vigencia } from '../../shared/types';
+import { nomeDoApelido, vigenciaDoApelido } from '../../shared/types';
 import { api } from './api';
 
 interface Props {
@@ -33,7 +34,10 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
     atualizar((draft) => {
       for (const linha of draft.eventLines) {
         for (const ed of linha.editions) {
-          if (ed.id === edicaoId && !ed.aliases.some((a) => a.toLowerCase() === limpo.toLowerCase())) {
+          const jaTem = ed.aliases.some(
+            (a) => nomeDoApelido(a).toLowerCase() === limpo.toLowerCase(),
+          );
+          if (ed.id === edicaoId && !jaTem) {
             ed.aliases.push(limpo);
           }
         }
@@ -45,7 +49,9 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
     atualizar((draft) => {
       for (const linha of draft.eventLines) {
         for (const ed of linha.editions) {
-          if (ed.id === edicaoId) ed.aliases = ed.aliases.filter((a) => a !== apelido);
+          if (ed.id === edicaoId) {
+            ed.aliases = ed.aliases.filter((a) => nomeDoApelido(a) !== apelido);
+          }
         }
       }
     });
@@ -120,16 +126,12 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
                 {ed.vigencia && <p className="edicao-vigencia">{explicarVigencia(ed.vigencia)}</p>}
                 <div className="apelidos">
                   {ed.aliases.map((apelido) => (
-                    <span className="apelido" key={apelido}>
-                      {apelido}
-                      <button
-                        type="button"
-                        title="Remover este apelido"
-                        onClick={() => removerApelido(ed.id, apelido)}
-                      >
-                        ×
-                      </button>
-                    </span>
+                    <Apelido
+                      key={nomeDoApelido(apelido)}
+                      apelido={apelido}
+                      vigenciaDaEdicao={ed.vigencia}
+                      aoRemover={() => removerApelido(ed.id, nomeDoApelido(apelido))}
+                    />
                   ))}
                   <CampoNovoApelido aoAdicionar={(valor) => adicionarApelido(ed.id, valor)} />
                 </div>
@@ -592,17 +594,54 @@ function clonar<T>(valor: T): T {
 
 
 /**
+ * Um apelido na tela. Quando ele so vale num periodo, a janela aparece junto —
+ * sem isso, quem edita aqui nao tem como saber por que aquele apelido "nao
+ * funciona" em parte das linhas, e a explicacao mais provavel que a pessoa vai
+ * dar a si mesma e que o painel esta errado.
+ */
+function Apelido({
+  apelido,
+  vigenciaDaEdicao,
+  aoRemover,
+}: {
+  apelido: AliasConfig;
+  vigenciaDaEdicao?: Vigencia;
+  aoRemover: () => void;
+}) {
+  const propria = typeof apelido === 'string' ? undefined : apelido.vigencia;
+  const janela = vigenciaDoApelido(apelido, vigenciaDaEdicao);
+  return (
+    <span className="apelido" title={janela ? explicarVigencia(janela) : undefined}>
+      {nomeDoApelido(apelido)}
+      {propria && <small className="apelido-vigencia">{resumirVigencia(propria)}</small>}
+      <button type="button" title="Remover este apelido" onClick={aoRemover}>
+        ×
+      </button>
+    </span>
+  );
+}
+
+const diaBr = (iso: string) => iso.split('-').reverse().join('/');
+
+/** Versao curta, para caber ao lado do apelido. */
+function resumirVigencia(vigencia: Vigencia): string {
+  if (vigencia.de && vigencia.ate) return ` ${diaBr(vigencia.de)}–${diaBr(vigencia.ate)}`;
+  if (vigencia.de) return ` a partir de ${diaBr(vigencia.de)}`;
+  if (vigencia.ate) return ` ate ${diaBr(vigencia.ate)}`;
+  return '';
+}
+
+/**
  * Explica, em portugues, a janela de datas de uma edicao. Sem isso, quem edita
  * os apelidos aqui nao tem como saber que aquele apelido so vale num periodo —
  * e um apelido que "nao funciona" sem explicacao vira reclamacao ou, pior,
  * numero errado.
  */
-function explicarVigencia(vigencia: { de?: string; ate?: string }): string {
-  const dia = (iso: string) => iso.split('-').reverse().join('/');
+function explicarVigencia(vigencia: Vigencia): string {
   if (vigencia.de && vigencia.ate) {
-    return `Estes apelidos só valem para linhas com data entre ${dia(vigencia.de)} e ${dia(vigencia.ate)}.`;
+    return `Só vale para linhas com data entre ${diaBr(vigencia.de)} e ${diaBr(vigencia.ate)}.`;
   }
-  if (vigencia.de) return `Estes apelidos só valem a partir de ${dia(vigencia.de)}.`;
-  if (vigencia.ate) return `Estes apelidos só valem até ${dia(vigencia.ate)}.`;
+  if (vigencia.de) return `Só vale para linhas a partir de ${diaBr(vigencia.de)}.`;
+  if (vigencia.ate) return `Só vale para linhas até ${diaBr(vigencia.ate)}.`;
   return '';
 }

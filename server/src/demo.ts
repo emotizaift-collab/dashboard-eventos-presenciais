@@ -6,6 +6,7 @@
  * Sao numeros inventados e o painel deixa isso explicito na tela.
  */
 import type { AmbassadorRow, AppConfig, BuyerRow, DataSet, LeadRow, TrafficRow } from '../../shared/types.js';
+import { nomeDoApelido } from '../../shared/types.js';
 
 /** Gerador deterministico: os numeros de exemplo nao mudam a cada recarga. */
 function makeRandom(seed: number): () => number {
@@ -34,7 +35,8 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
 
   for (const line of config.eventLines) {
     const edition = line.editions.find((item) => item.current) ?? line.editions[0];
-    const rotulo = edition.aliases[0] ?? line.label;
+    const primeiro = edition.aliases[0];
+    const rotulo = primeiro ? nomeDoApelido(primeiro) : line.label;
 
     for (const date of days) {
       const qtdLeads = Math.floor(random() * 18) + 2;

@@ -50,3 +50,38 @@ test('vigencia vazia some, em vez de virar uma janela sem sentido', () => {
   const config = validateConfig(comVigencia({}));
   assert.equal(config.eventLines[0].editions[0].vigencia, undefined);
 });
+
+const comApelido = (apelido) => {
+  const config = base();
+  config.eventLines[0].editions[0].aliases = [apelido];
+  return config;
+};
+
+test('apelido com vigencia propria e aceito e preservado', () => {
+  const config = validateConfig(comApelido({ nome: 'DAY TRAINING', vigencia: { de: '2026-09-04' } }));
+  assert.deepEqual(config.eventLines[0].editions[0].aliases, [
+    { nome: 'DAY TRAINING', vigencia: { de: '2026-09-04' } },
+  ]);
+});
+
+test('apelido cuja janela ficou vazia volta a ser texto simples', () => {
+  // Evita a configuracao salva ir acumulando {"nome":"X"} sem proposito nenhum.
+  assert.deepEqual(validateConfig(comApelido({ nome: 'ANIMADAY' })).eventLines[0].editions[0].aliases, [
+    'ANIMADAY',
+  ]);
+  assert.deepEqual(
+    validateConfig(comApelido({ nome: 'ANIMADAY', vigencia: {} })).eventLines[0].editions[0].aliases,
+    ['ANIMADAY'],
+  );
+});
+
+test('data invalida no apelido e recusada, dizendo qual apelido', () => {
+  assert.throws(
+    () => validateConfig(comApelido({ nome: 'DAY TRAINING', vigencia: { de: '04/09/2026' } })),
+    /DAY TRAINING/,
+  );
+});
+
+test('apelido sem nome e descartado, em vez de virar apelido vazio', () => {
+  assert.deepEqual(validateConfig(comApelido({ nome: '   ' })).eventLines[0].editions[0].aliases, []);
+});

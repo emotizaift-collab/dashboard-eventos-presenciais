@@ -12,9 +12,9 @@ const matcher = compileMatcher(config);
 
 const casos = [
   // Evento A — nome novo
-  ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-atual'],
-  ['Dinâmicas de Alto Impacto', 'dai', 'dai-atual'],
-  ['DAI', 'dai', 'dai-atual'],
+  ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-ed-01'],
+  ['Dinâmicas de Alto Impacto', 'dai', 'dai-ed-01'],
+  ['DAI', 'dai', 'dai-ed-01'],
   // PAI = Palestrante de Alto Impacto = o evento "Formacao de Palestrantes",
   // confirmado pela IFT. Sao os nomes que a planilha de leads e as tags do
   // trafego usam; a aba de vendas chama o mesmo evento de "DAY TRAINING –
@@ -28,8 +28,8 @@ const casos = [
   // pela IFT — nao do Dinamicas de Alto Impacto, como dizia a especificacao.
   ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
   // Evento B — nome novo
-  ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-atual'],
-  ['ANIMA Day', 'anima', 'anima-atual'],
+  ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-ed-01'],
+  ['ANIMA Day', 'anima', 'anima-ed-01'],
   // "Day Training Sist" e o Dinamicas Sistemicas abreviado — nao o ANIMA.
   ['Day Training Sist', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
 ];
@@ -102,7 +102,7 @@ test('apelidos escritos com espaco tambem sao reconhecidos', () => {
   // depende da data da linha. A regra completa esta nos testes de vigencia.
   const day = matchEdition(matcher, 'DAY TRAININ', '2026-09-10');
   assert.ok(day, '"DAY TRAININ" precisa ser reconhecido');
-  assert.equal(day.editionId, 'anima-day-training');
+  assert.equal(day.editionId, 'anima-ed-01');
 });
 
 test('linha de acompanhante e reconhecida e nunca vira ingresso', () => {
@@ -349,4 +349,44 @@ test('o apelido generico nao rouba os nomes completos dos eventos', () => {
   for (const [texto, linhaEsperada] of casos) {
     assert.equal(matchEdition(matcher, texto, dentroDaVigencia)?.lineId, linhaEsperada, texto);
   }
+});
+
+
+/**
+ * A edicao #01 do ANIMA Day e a mesma coisa que "ANIMA Day" — eram duas
+ * entradas no menu para o mesmo evento, e a IFT pediu para juntar. Juntar so e
+ * possivel porque a vigencia e de cada APELIDO, e nao da edicao: "DAY TRAINING"
+ * so vale de 04/09/2026 em diante, enquanto "#01 ÂNIMA Day Training" e
+ * "ANIMADAY" valem sempre. Se a janela fosse da edicao inteira, as vendas
+ * anteriores a essa data parariam de ser reconhecidas — 
+ * exatamente o estrago que a vigencia veio evitar.
+ */
+test('a edicao #01 do ANIMA atende por nomes de idades diferentes', () => {
+  const antes = '2026-08-01';
+  const depois = '2026-09-10';
+
+  // Nomes proprios do evento: valem nas duas datas.
+  for (const nome of ['#01  ÂNIMA Day Training', 'ANIMADAY', 'ANIMA Day']) {
+    for (const data of [antes, depois]) {
+      const r = matchEdition(matcher, nome, data);
+      assert.equal(r?.editionId, 'anima-ed-01', `${nome} em ${data}`);
+    }
+  }
+
+  // Nome generico: so depois da virada.
+  assert.equal(matchEdition(matcher, 'DAY TRAINING', depois)?.editionId, 'anima-ed-01');
+  assert.equal(matchEdition(matcher, 'DAY TRAINING', antes)?.lineId, 'day-training-compartilhado');
+
+  // E sem data nenhuma, o nome proprio continua funcionando.
+  assert.equal(matchEdition(matcher, 'ANIMADAY')?.editionId, 'anima-ed-01');
+});
+
+test('cada evento tem uma unica entrada por edicao no menu', () => {
+  // O ANIMA Day e o Dinamicas de Alto Impacto apareciam duas vezes cada um no
+  // seletor de evento ("Edicao #01" e o nome do evento), como se fossem coisas
+  // diferentes. Sao a mesma edicao.
+  const rotulos = (lineId) =>
+    config.eventLines.find((l) => l.id === lineId).editions.map((e) => e.label);
+  assert.deepEqual(rotulos('anima'), ['#01 — ANIMA Day']);
+  assert.deepEqual(rotulos('dai'), ['#01 — Dinâmicas de Alto Impacto']);
 });

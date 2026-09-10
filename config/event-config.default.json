@@ -183,21 +183,14 @@
       "label": "Dinâmicas de Alto Impacto",
       "editions": [
         {
-          "id": "dai-atual",
-          "label": "Dinâmicas de Alto Impacto",
+          "id": "dai-ed-01",
+          "label": "#01 — Dinâmicas de Alto Impacto",
           "current": true,
           "aliases": [
+            "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata",
             "DAI",
             "Dinâmicas de Alto Impacto",
             "Dinamicas de Alto Impacto"
-          ]
-        },
-        {
-          "id": "dai-ed-01",
-          "label": "Edição #01",
-          "current": false,
-          "aliases": [
-            "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata"
           ]
         }
       ]
@@ -208,34 +201,37 @@
       "editions": [
         {
           "id": "anima-ed-01",
-          "label": "Edição #01",
-          "current": false,
-          "aliases": [
-            "#01  ÂNIMA Day Training"
-          ]
-        },
-        {
-          "id": "anima-atual",
-          "label": "ANIMA Day",
+          "label": "#01 — ANIMA Day",
           "current": true,
           "aliases": [
+            "#01  ÂNIMA Day Training",
             "ANIMADAY",
-            "ANIMA Day"
+            "ANIMA Day",
+            {
+              "nome": "DAY TRAINING",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            },
+            {
+              "nome": "Day Training",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            },
+            {
+              "nome": "DAYTRAINING",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            },
+            {
+              "nome": "DAY TRAININ",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            }
           ]
-        },
-        {
-          "id": "anima-day-training",
-          "label": "Day Training (leads, a partir de 04/09/2026)",
-          "current": false,
-          "aliases": [
-            "DAY TRAINING",
-            "Day Training",
-            "DAYTRAINING",
-            "DAY TRAININ"
-          ],
-          "vigencia": {
-            "de": "2026-09-04"
-          }
         }
       ]
     },

@@ -64,23 +64,53 @@ export interface SourceConfig<C> {
   columns: C;
 }
 
+/**
+ * Janela de validade, em AAAA-MM-DD (as duas pontas sao inclusivas).
+ *
+ * Existe porque um mesmo texto pode mudar de dono ao longo do tempo: na
+ * planilha de leads da IFT, "DAY TRAINING" servia a dois eventos e, a partir
+ * de 04/09/2026, passou a ser so do ANIMA Day. Sem a janela, ou os leads
+ * antigos entram no evento errado, ou os 559 sao descartados.
+ *
+ * Linha sem data nao casa com apelido que tenha vigencia: nao da para
+ * verificar, e chutar aqui vira lead no evento errado.
+ */
+export interface Vigencia {
+  de?: string;
+  ate?: string;
+}
+
+/**
+ * Um apelido de edicao. Texto simples no caso normal; objeto quando aquele
+ * nome — e so ele — vale apenas num periodo.
+ *
+ * A vigencia e do APELIDO, nao da edicao, porque uma edicao costuma juntar
+ * nomes de idades diferentes: a edicao #01 do ANIMA Day atende ao mesmo tempo
+ * por "#01 ÂNIMA Day Training" (sempre), por "ANIMADAY" (sempre) e por
+ * "DAY TRAINING" (so de 04/09/2026 em diante, porque antes disso esse nome
+ * tambem era do Dinamicas Sistemicas). Se a janela fosse da edicao inteira,
+ * as vendas anteriores a essa data parariam de ser reconhecidas.
+ */
+export type AliasConfig = string | { nome: string; vigencia?: Vigencia };
+
+/** O texto do apelido, venha ele como string ou como objeto. */
+export function nomeDoApelido(alias: AliasConfig): string {
+  return typeof alias === 'string' ? alias : alias.nome;
+}
+
+/** A janela do apelido; sem janela, vale a da edicao (quando houver). */
+export function vigenciaDoApelido(alias: AliasConfig, edicao?: Vigencia): Vigencia | undefined {
+  if (typeof alias === 'string') return edicao;
+  return alias.vigencia ?? edicao;
+}
+
 export interface EventEdition {
   id: string;
   label: string;
   current: boolean;
-  aliases: string[];
-  /**
-   * Janela de validade dos apelidos desta edicao, em AAAA-MM-DD.
-   *
-   * Existe porque um mesmo texto pode mudar de dono ao longo do tempo: na
-   * planilha de leads da IFT, "DAY TRAINING" servia a dois eventos e, a partir
-   * de 04/09/2026, passou a ser so do ANIMA Day. Sem a janela, ou os leads
-   * antigos entram no evento errado, ou os 559 sao descartados.
-   *
-   * Linha sem data nao casa com apelido que tenha vigencia: nao da para
-   * verificar, e chutar aqui vira lead no evento errado.
-   */
-  vigencia?: { de?: string; ate?: string };
+  aliases: AliasConfig[];
+  /** Janela padrao da edicao, usada pelos apelidos que nao tem a propria. */
+  vigencia?: Vigencia;
 }
 
 export interface EventLine {

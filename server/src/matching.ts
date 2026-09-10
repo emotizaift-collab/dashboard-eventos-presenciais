@@ -8,6 +8,7 @@
  */
 import { normalizeText, extractTags } from './normalize.js';
 import type { AppConfig, EventEdition, TicketKind } from '../../shared/types.js';
+import { nomeDoApelido, vigenciaDoApelido } from '../../shared/types.js';
 
 export interface EditionMatch {
   lineId: string;
@@ -46,16 +47,16 @@ export function compileMatcher(config: AppConfig): CompiledMatcher {
   for (const line of config.eventLines) {
     for (const edition of line.editions) {
       for (const alias of edition.aliases) {
-        const normalized = normalizeText(alias);
-        if (normalized) {
-          aliases.push({
+        const normalized = normalizeText(nomeDoApelido(alias));
+        if (!normalized) continue;
+        const vigencia = vigenciaDoApelido(alias, edition.vigencia);
+        aliases.push({
           lineId: line.id,
           editionId: edition.id,
           alias: normalized,
-          vigenciaDe: edition.vigencia?.de,
-          vigenciaAte: edition.vigencia?.ate,
+          vigenciaDe: vigencia?.de,
+          vigenciaAte: vigencia?.ate,
         });
-        }
       }
     }
   }

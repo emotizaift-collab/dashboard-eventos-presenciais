@@ -8,9 +8,9 @@ const qtd = (metrics, id) => metrics.ingressos.find((t) => t.id === id)?.quantid
 
 const config = JSON.parse(fs.readFileSync(new URL('../../config/event-config.default.json', import.meta.url), 'utf8'));
 
-const lead = (date, edition = 'dai-atual') => ({ date, rawEvent: 'DAI', editionId: edition, lineId: 'dai' });
+const lead = (date, edition = 'dai-ed-01') => ({ date, rawEvent: 'DAI', editionId: edition, lineId: 'dai' });
 let proximaLinha = 2;
-const compra = (date, ticketKind, ambassador = '', edition = 'dai-atual') => ({
+const compra = (date, ticketKind, ambassador = '', edition = 'dai-ed-01') => ({
   linha: proximaLinha++,
   date, rawEvent: 'DAI', editionId: edition, lineId: 'dai',
   ticketKind, rawTicketType: ticketKind ?? '', ambassador, valor: null,
@@ -37,7 +37,7 @@ const comConvites = (ds) => ({ ...ds, ambassadors: derivarEmbaixadores(ds.buyers
 
 /** Configuracao que calcula pelo preco de tabela, como era antes da troca de fonte. */
 const configPrecoDeTabela = { ...config, usarValorDaPlanilha: false };
-const gasto = (date, cost, edition = 'dai-atual') => ({
+const gasto = (date, cost, edition = 'dai-ed-01') => ({
   date, campaign: '[DAI] teste', editionId: edition, lineId: 'dai', cost,
 });
 
@@ -122,7 +122,7 @@ test('filtrar por edicao separa o nome atual do historico', () => {
     ...dataset,
     buyers: [...dataset.buyers, compra('2026-09-01', 'individual', '', 'dai-historico')],
   };
-  const soAtual = computeMetrics(config, misto, { ...filtro, editionId: 'dai-atual' });
+  const soAtual = computeMetrics(config, misto, { ...filtro, editionId: 'dai-ed-01' });
   const soHistorico = computeMetrics(config, misto, { ...filtro, editionId: 'dai-historico' });
   assert.equal(qtd(soAtual.metrics, 'individual'), 2);
   assert.equal(qtd(soHistorico.metrics, 'individual'), 1);
@@ -319,8 +319,8 @@ const datasetCampanhas = {
   leads: [lead('2026-09-01'), lead('2026-09-02')],
   buyers: [compra('2026-09-01', 'individual'), compra('2026-09-02', 'duplo')],
   traffic: [
-    { date: '2026-09-01', campaign: '[DAI] [LEADS] [ABO] - 04-09', editionId: 'dai-atual', lineId: 'dai', cost: 300 },
-    { date: '2026-09-02', campaign: '[DAI] [VENDAS] [PAGINA] - 05-09', editionId: 'dai-atual', lineId: 'dai', cost: 200 },
+    { date: '2026-09-01', campaign: '[DAI] [LEADS] [ABO] - 04-09', editionId: 'dai-ed-01', lineId: 'dai', cost: 300 },
+    { date: '2026-09-02', campaign: '[DAI] [VENDAS] [PAGINA] - 05-09', editionId: 'dai-ed-01', lineId: 'dai', cost: 200 },
     { date: '2026-09-02', campaign: '[PAI] [VENDAS] [INLEAD] - antiga', editionId: 'dai-historico', lineId: 'dai', cost: 999 },
   ],
   fetchedAt: new Date().toISOString(),
@@ -364,7 +364,7 @@ test('escolher campanha de outro evento zera faturamento e leads do evento filtr
     ...datasetCampanhas,
     traffic: [
       ...datasetCampanhas.traffic,
-      { date: '2026-09-01', campaign: '[ANIMADAY] [LEADS] - 04-09', editionId: 'anima-atual', lineId: 'anima', cost: 50 },
+      { date: '2026-09-01', campaign: '[ANIMADAY] [LEADS] - 04-09', editionId: 'anima-ed-01', lineId: 'anima', cost: 50 },
     ],
   };
   const escolha = { ...filtro, lineId: 'todos', campanhas: ['[ANIMADAY] [LEADS] - 04-09'] };

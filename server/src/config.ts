@@ -7,7 +7,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AppConfig, EventEdition, TicketTypeConfig } from '../../shared/types.js';
+import type { AliasConfig, AppConfig, TicketTypeConfig, Vigencia } from '../../shared/types.js';
+import { nomeDoApelido } from '../../shared/types.js';
 
 /**
  * Raiz do projeto. Sobe os diretorios ate achar o package.json, para funcionar
@@ -86,9 +87,12 @@ export function validateConfig(config: AppConfig): AppConfig {
       if (editionIds.has(edition.id)) throw new Error(`edicao duplicada: ${edition.id}`);
       editionIds.add(edition.id);
       if (!Array.isArray(edition.aliases)) edition.aliases = [];
-      edition.aliases = edition.aliases.map((alias) => String(alias).trim()).filter(Boolean);
+      edition.aliases = edition.aliases
+        .map((alias) => limparApelido(alias, edition.label))
+        .filter((alias): alias is AliasConfig => alias !== null);
       edition.current = Boolean(edition.current);
-      validarVigencia(edition);
+      validarVigencia(edition.vigencia, edition.label);
+      if (edition.vigencia && !edition.vigencia.de && !edition.vigencia.ate) delete edition.vigencia;
     }
   }
 
@@ -136,26 +140,40 @@ export function validateConfig(config: AppConfig): AppConfig {
  * que foi exatamente o estrago que a vigencia veio consertar. Por isso barrar
  * aqui, na hora de salvar, e nao deixar passar.
  */
-function validarVigencia(edition: EventEdition): void {
-  const vigencia = edition.vigencia;
+function validarVigencia(vigencia: Vigencia | undefined, rotulo: string): void {
   if (!vigencia) return;
   const { de, ate } = vigencia;
-  if (de === undefined && ate === undefined) {
-    delete edition.vigencia;
-    return;
-  }
   for (const [campo, valor] of [['de', de], ['ate', ate]] as const) {
     if (valor === undefined) continue;
     if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
       throw new Error(
-        `"${edition.label}": a data "${campo}" da vigencia precisa estar no formato ` +
+        `"${rotulo}": a data "${campo}" da vigencia precisa estar no formato ` +
           `AAAA-MM-DD (recebi "${valor}")`,
       );
     }
   }
   if (de && ate && de > ate) {
-    throw new Error(`"${edition.label}": a vigencia comeca (${de}) depois de terminar (${ate})`);
+    throw new Error(`"${rotulo}": a vigencia comeca (${de}) depois de terminar (${ate})`);
   }
+}
+
+/**
+ * Normaliza um apelido: texto vira texto, objeto continua objeto, e um objeto
+ * cuja janela ficou vazia volta a ser texto simples — assim a configuracao
+ * salva nao acumula `{"nome":"X"}` sem proposito.
+ */
+function limparApelido(alias: unknown, rotuloDaEdicao: string): AliasConfig | null {
+  if (alias && typeof alias === 'object' && !Array.isArray(alias)) {
+    const bruto = alias as { nome?: unknown; vigencia?: Vigencia };
+    const nome = String(bruto.nome ?? '').trim();
+    if (!nome) return null;
+    const vigencia = bruto.vigencia;
+    validarVigencia(vigencia, `${rotuloDaEdicao} / apelido "${nome}"`);
+    if (!vigencia || (!vigencia.de && !vigencia.ate)) return nome;
+    return { nome, vigencia };
+  }
+  const nome = String(alias ?? '').trim();
+  return nome ? nome : null;
 }
 
 /**

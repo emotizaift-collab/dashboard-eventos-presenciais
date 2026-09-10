@@ -300,3 +300,11 @@ code.mono { font-family: inherit; background: var(--superficie); padding: 2px 7p
   font-size: 12px;
   color: var(--texto-fraco);
 }
+
+/* Janela de datas de um apelido, ao lado do proprio apelido. */
+.apelido-vigencia {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
