@@ -471,3 +471,30 @@ function collectUnmatched(data: DataSet): Metrics['naoClassificado'] {
 function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
+
+/**
+ * Primeiro e ultimo dia em que esta edicao vendeu. Alimenta o atalho "Periodo
+ * desta edicao" na tela.
+ *
+ * Existe porque a edicao so separa a venda: leads e custo chegam com um nome
+ * generico do evento e sao recortados pela data. Quem escolhe a edicao sem
+ * ajustar as datas ve o custo do evento inteiro contra o faturamento de uma
+ * edicao — e nao tinha como saber a janela certa sem abrir a planilha.
+ *
+ * Sem venda com data, devolve null: um atalho que mandasse para um intervalo
+ * inventado seria pior do que nenhum atalho.
+ */
+export function periodoDeVendas(
+  data: DataSet | null,
+  editionId: string,
+): { de: string; ate: string } | null {
+  if (!data) return null;
+  let de: string | null = null;
+  let ate: string | null = null;
+  for (const row of data.buyers) {
+    if (row.editionId !== editionId || !row.date) continue;
+    if (de === null || row.date < de) de = row.date;
+    if (ate === null || row.date > ate) ate = row.date;
+  }
+  return de && ate ? { de, ate } : null;
+}

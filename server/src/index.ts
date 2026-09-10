@@ -6,7 +6,7 @@ import express from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { store } from './store.js';
 import { ROOT } from './config.js';
-import { computeMetrics, listDays } from './metrics.js';
+import { computeMetrics, listDays, periodoDeVendas } from './metrics.js';
 import { lookupTab, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
 import { hasCredentials, listTabs, readHeader, readTab, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types.js';
@@ -56,6 +56,7 @@ app.get('/api/state', (_req, res) => {
         id: edition.id,
         label: edition.label,
         current: edition.current,
+        periodoDeVendas: periodoDeVendas(data, edition.id),
       })),
     })),
   });

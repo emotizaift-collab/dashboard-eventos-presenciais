@@ -10,7 +10,13 @@ export interface EstadoApp {
   eventLines: Array<{
     id: string;
     label: string;
-    editions: Array<{ id: string; label: string; current: boolean }>;
+    editions: Array<{
+      id: string;
+      label: string;
+      current: boolean;
+      /** Primeiro e ultimo dia em que a edicao vendeu, quando houve venda. */
+      periodoDeVendas: { de: string; ate: string } | null;
+    }>;
   }>;
 }
 

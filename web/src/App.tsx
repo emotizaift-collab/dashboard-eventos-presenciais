@@ -20,6 +20,15 @@ export function App() {
   const [selecao, setSelecao] = useState('');
   const linha = selecao.startsWith('ed:') ? '' : selecao.replace(/^linha:/, '');
   const edicao = selecao.startsWith('ed:') ? selecao.slice(3) : '';
+
+  // A edicao separa a venda, mas nao os leads nem o custo: esses chegam com um
+  // nome generico do evento e so a data os recorta. Este atalho poupa quem
+  // escolheu uma edicao de ter de descobrir na planilha quando ela vendeu.
+  const periodoDaEdicao = edicao
+    ? (estado?.eventLines
+        .flatMap((item) => item.editions)
+        .find((item) => item.id === edicao)?.periodoDeVendas ?? null)
+    : null;
   const [de, setDe] = useState(diasAtras(29));
   const [ate, setAte] = useState(hoje());
   const [campanhas, setCampanhas] = useState<CampanhaResumo[]>([]);
@@ -226,6 +235,14 @@ export function App() {
                 <button onClick={() => { setDe(diasAtras(29)); setAte(hoje()); }}>30 dias</button>
                 <button onClick={() => { setDe(inicioDoMes()); setAte(hoje()); }}>Este mês</button>
                 <button onClick={() => { setDe('2024-01-01'); setAte(hoje()); }}>Tudo</button>
+                {periodoDaEdicao && (
+                  <button
+                    title={`De ${dataBr(periodoDaEdicao.de)} a ${dataBr(periodoDaEdicao.ate)}, quando esta edição vendeu`}
+                    onClick={() => { setDe(periodoDaEdicao.de); setAte(periodoDaEdicao.ate); }}
+                  >
+                    Período desta edição
+                  </button>
+                )}
               </div>
             </div>
 
