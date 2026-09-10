@@ -207,7 +207,8 @@
           ],
           "vigencia": {
             "de": "2026-09-04"
-          }
+          },
+          "fonteDaLinha": true
         }
       ]
     },
@@ -309,7 +310,8 @@
           ],
           "vigencia": {
             "ate": "2026-09-02"
-          }
+          },
+          "fonteDaLinha": true
         }
       ]
     },
@@ -357,7 +359,8 @@
             "DINAMICASAOVIVO",
             "Dinâmicas ao Vivo",
             "Day Training Sist"
-          ]
+          ],
+          "fonteDaLinha": true
         }
       ]
     },

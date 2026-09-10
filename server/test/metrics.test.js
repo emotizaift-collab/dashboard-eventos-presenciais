@@ -625,3 +625,99 @@ test('campanha ignorada que pertence a um evento continua contando', () => {
   // nenhuma etapa depois some com o custo de um evento reconhecido.
   assert.equal(m.custoCampanha, 500);
 });
+
+/**
+ * As duas pontas do funil chegam nomeadas de jeitos diferentes: a venda com o
+ * nome do produto daquela edicao ("#03 DAY TRAINING – FORMACAO..."), o lead e a
+ * campanha com um nome generico do evento ("PAI AO VIVO", "[PAI] ..."). Escolher
+ * a edicao mostrava so metade — faturamento e ingressos de um lado, leads e
+ * custo do outro, cada um numa opcao diferente do seletor.
+ *
+ * A fonte da linha junta as duas. O que separa uma edicao da outra e a DATA,
+ * porque as edicoes acontecem em epocas diferentes.
+ */
+const dadosDeFunilPartido = () => ({
+  buyers: [], ambassadors: [], fetchedAt: '', warnings: [], falhas: [],
+  // Venda com o nome do produto da edicao #03.
+  leads: [
+    { date: '2026-03-10', rawEvent: 'PAI AO VIVO', editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes' },
+    { date: '2026-03-11', rawEvent: 'PAI AO VIVO', editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes' },
+    // Fora do periodo: e assim que uma edicao se separa da outra.
+    { date: '2025-01-05', rawEvent: 'PAI AO VIVO', editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes' },
+  ],
+  traffic: [
+    { date: '2026-03-10', campaign: '[PAI] [VENDAS] x', editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes', cost: 300 },
+    { date: '2025-01-05', campaign: '[PAI] [VENDAS] x', editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes', cost: 900 },
+  ],
+});
+
+test('escolher a edicao traz os leads e o custo da fonte da linha, pelo periodo', () => {
+  const m = computeMetrics(config, dadosDeFunilPartido(), {
+    lineId: 'formacao-palestrantes', editionId: 'fp-ed-03',
+    from: '2026-03-01', to: '2026-03-31', campanhas: [],
+  }).metrics;
+
+  assert.equal(m.leadsTotal, 2, 'so os leads do periodo escolhido');
+  assert.equal(m.custoCampanha, 300, 'so o custo do periodo escolhido');
+  assert.equal(m.leadsSemFonte, false);
+  assert.equal(m.custoPorLead, 150);
+});
+
+test('a tela avisa que esses leads e esse custo sao do periodo, nao da edicao', () => {
+  // Sem este aviso, escolher a edicao #03 com o filtro no historico inteiro
+  // mostra o custo do evento todo contra o faturamento de uma edicao so.
+  const m = computeMetrics(config, dadosDeFunilPartido(), {
+    lineId: 'formacao-palestrantes', editionId: 'fp-ed-03',
+    from: '2024-01-01', to: '2026-12-31', campanhas: [],
+  }).metrics;
+  assert.equal(m.fonteCompartilhada?.leads, 3);
+  assert.equal(m.fonteCompartilhada?.custo, 1200);
+  assert.match(m.fonteCompartilhada.rotulo, /leads e tráfego/);
+});
+
+test('escolher a propria fonte nao puxa as edicoes de volta', () => {
+  const m = computeMetrics(config, dadosDeFunilPartido(), {
+    lineId: 'formacao-palestrantes', editionId: 'fp-nomes-antigos',
+    from: '2024-01-01', to: '2026-12-31', campanhas: [],
+  }).metrics;
+  assert.equal(m.leadsTotal, 3);
+  assert.equal(m.fonteCompartilhada, null, 'aqui a fonte e a propria selecao, nao um extra');
+});
+
+test('a fonte de um evento nao vaza para as edicoes de outro', () => {
+  // O DAI tem fonte propria (dai-nomes-pai); escolher uma edicao da Formacao de
+  // Palestrantes nao pode trazer os leads do DAI junto.
+  const dados = {
+    ...dadosDeFunilPartido(),
+    leads: [{ date: '2026-03-10', rawEvent: 'PAI AO VIVO', editionId: 'dai-nomes-pai', lineId: 'dai' }],
+    traffic: [],
+  };
+  const m = computeMetrics(config, dados, {
+    lineId: 'formacao-palestrantes', editionId: 'fp-ed-03',
+    from: '2026-03-01', to: '2026-03-31', campanhas: [],
+  }).metrics;
+  assert.equal(m.leadsTotal, 0);
+});
+
+test('escolher a linha inteira nao muda: a fonte ja faz parte dela', () => {
+  const m = computeMetrics(config, dadosDeFunilPartido(), {
+    lineId: 'formacao-palestrantes', editionId: null,
+    from: '2026-03-01', to: '2026-03-31', campanhas: [],
+  }).metrics;
+  assert.equal(m.leadsTotal, 2);
+  assert.equal(m.custoCampanha, 300);
+  assert.equal(m.fonteCompartilhada, null, 'nao ha edicao escolhida para avisar sobre');
+});
+
+test('toda linha com produto por edicao declara qual e a fonte de leads', () => {
+  // A regra e configuracao, nao codigo: um evento novo com venda por edicao e
+  // lead generico so precisa marcar a fonte dele aqui. Este teste existe para
+  // que uma linha nova sem fonte apareca, em vez de mostrar meio funil calada.
+  for (const linha of config.eventLines) {
+    const fontes = linha.editions.filter((e) => e.fonteDaLinha);
+    assert.ok(fontes.length <= 1, `${linha.id} tem mais de uma fonte de leads`);
+    if (linha.editions.length > 1 && linha.id !== 'day-training-compartilhado') {
+      assert.equal(fontes.length, 1, `${linha.id} tem varias edicoes e nenhuma fonte de leads`);
+    }
+  }
+});

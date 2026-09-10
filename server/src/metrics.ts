@@ -40,13 +40,41 @@ function chaveCampanha(nome: string): string {
   return nome.trim().toLowerCase();
 }
 
+/**
+ * Quais edicoes uma selecao aceita, ou null quando a selecao e por linha.
+ *
+ * Escolher uma edicao aceita tambem a fonte de leads e trafego da linha dela
+ * (EventEdition.fonteDaLinha), porque venda e lead chegam com nomes diferentes
+ * na origem: a venda com o nome do produto daquela edicao, o lead e a campanha
+ * com um nome generico do evento. Sem isso, escolher a edicao mostra so metade
+ * do funil.
+ *
+ * Escolher a propria fonte nao puxa as edicoes de volta: ali a pessoa quer
+ * olhar a fonte, nao o evento inteiro.
+ */
+function edicoesAceitas(config: AppConfig, editionId: string | null): Set<string> | null {
+  if (!editionId) return null;
+  const aceitas = new Set([editionId]);
+  const linha = config.eventLines.find((item) =>
+    item.editions.some((edicao) => edicao.id === editionId),
+  );
+  const escolhida = linha?.editions.find((edicao) => edicao.id === editionId);
+  if (linha && escolhida && !escolhida.fonteDaLinha) {
+    for (const edicao of linha.editions) {
+      if (edicao.fonteDaLinha) aceitas.add(edicao.id);
+    }
+  }
+  return aceitas;
+}
+
 /** Aceita a linha se ela pertence a linha de evento (e a edicao, quando escolhida). */
 function matchesFilter(
   filter: MetricsFilter,
   lineId: string | null,
   editionId: string | null,
+  aceitas: Set<string> | null,
 ): boolean {
-  if (filter.editionId) return editionId === filter.editionId;
+  if (aceitas) return editionId !== null && aceitas.has(editionId);
   if (filter.lineId === 'todos') return lineId !== null;
   return lineId === filter.lineId;
 }
@@ -63,6 +91,7 @@ export function computeMetrics(
 ): { metrics: Metrics; warnings: string[] } {
   const warnings: string[] = [];
   const price = config.ticketPrice;
+  const aceitas = edicoesAceitas(config, filter.editionId);
 
   // Campanhas escolhidas restringem tambem os eventos considerados, porque e o
   // unico vinculo que existe entre campanha e venda: o evento a que ela pertence.
@@ -81,13 +110,13 @@ export function computeMetrics(
 
   const leads = data.leads.filter(
     (row) =>
-      matchesFilter(filter, row.lineId, row.editionId) &&
+      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
       noEscopoDasCampanhas(row.lineId) &&
       inRange(row.date, filter.from, filter.to),
   );
 
   const buyersOfEvent = data.buyers.filter(
-    (row) => matchesFilter(filter, row.lineId, row.editionId) && noEscopoDasCampanhas(row.lineId),
+    (row) => matchesFilter(filter, row.lineId, row.editionId, aceitas) && noEscopoDasCampanhas(row.lineId),
   );
   const buyers = buyersOfEvent.filter((row) => inRange(row.date, filter.from, filter.to));
 
@@ -124,7 +153,7 @@ export function computeMetrics(
   // O custo, esse sim, e filtrado pelas campanhas exatas escolhidas.
   const traffic = data.traffic.filter(
     (row) =>
-      matchesFilter(filter, row.lineId, row.editionId) &&
+      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
       (selecionadas.size === 0 || selecionadas.has(chaveCampanha(row.campaign))) &&
       inRange(row.date, filter.from, filter.to),
   );
@@ -177,7 +206,7 @@ export function computeMetrics(
   // na falta dela, das proprias linhas de venda.
   const comEmbaixador = data.ambassadors.filter(
     (row) =>
-      matchesFilter(filter, row.lineId, row.editionId) &&
+      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
       noEscopoDasCampanhas(row.lineId) &&
       inRange(row.date, filter.from, filter.to),
   );
@@ -240,7 +269,7 @@ export function computeMetrics(
   // Mesmo recorte de evento, sem o recorte de data: e o que separa "deu zero
   // neste mes" de "este evento nao aparece na planilha de leads".
   const leadsSemFonte = !data.leads.some(
-    (row) => matchesFilter(filter, row.lineId, row.editionId) && noEscopoDasCampanhas(row.lineId),
+    (row) => matchesFilter(filter, row.lineId, row.editionId, aceitas) && noEscopoDasCampanhas(row.lineId),
   );
 
   // Um balde que inclua este evento significa que ha leads dele na planilha,
@@ -261,6 +290,29 @@ export function computeMetrics(
     : 0;
   const leadsCompartilhados =
     balde && leadsNoBalde > 0 ? { rotulo: balde.label, quantidade: leadsNoBalde } : null;
+
+  // Quanto dos numeros veio da fonte compartilhada da linha. O painel avisa na
+  // tela: esses leads e esse custo sao os do PERIODO, nao os daquela edicao.
+  const idsDaFonte = new Set(
+    (aceitas ? [...aceitas] : [])
+      .filter((id) => id !== filter.editionId)
+      .filter((id) =>
+        config.eventLines.some((linha) =>
+          linha.editions.some((edicao) => edicao.id === id && edicao.fonteDaLinha),
+        ),
+      ),
+  );
+  const daFonte = <T extends { editionId: string | null }>(linhas: T[]): T[] =>
+    linhas.filter((linha) => linha.editionId !== null && idsDaFonte.has(linha.editionId));
+  const rotuloDaFonte = config.eventLines
+    .flatMap((linha) => linha.editions)
+    .find((edicao) => idsDaFonte.has(edicao.id))?.label;
+  const custoDaFonte = round2(daFonte(traffic).reduce((total, row) => total + row.cost, 0));
+  const leadsDaFonte = daFonte(leads).length;
+  const fonteCompartilhada =
+    rotuloDaFonte && (leadsDaFonte > 0 || custoDaFonte > 0)
+      ? { rotulo: rotuloDaFonte, leads: leadsDaFonte, custo: custoDaFonte }
+      : null;
   const cadeirasVendidas = ingressos.reduce((total, item) => total + item.participantes, 0);
   const participantes = cadeirasVendidas + embaixadores + convidados;
   const custoPorLead = leadsTotal > 0 ? round2(custoCampanha / leadsTotal) : null;
@@ -273,6 +325,7 @@ export function computeMetrics(
       leadsTotal,
       leadsSemFonte,
       leadsCompartilhados,
+      fonteCompartilhada,
       participantes,
       custoPorLead,
       ingressos,

@@ -54,7 +54,15 @@ export function Painel({ dados }: Props) {
 
       <section className="metricas">
         <Metrica rotulo="Faturamento líquido" valor={dinheiro(m.faturamentoLiquido)} />
-        <Metrica rotulo="Custo de campanha" valor={dinheiro(m.custoCampanha)} />
+        <Metrica
+          rotulo="Custo de campanha"
+          valor={dinheiro(m.custoCampanha)}
+          nota={
+            m.fonteCompartilhada && m.fonteCompartilhada.custo > 0
+              ? `Inclui ${dinheiro(m.fonteCompartilhada.custo)} do período, não separado por edição`
+              : undefined
+          }
+        />
         <Metrica rotulo="Leads" valor={m.leadsSemFonte ? '—' : numero(m.leadsTotal)} nota={notaDosLeads(m)} />
         <Metrica rotulo="Participantes" valor={numero(m.participantes)} />
         <Metrica
@@ -176,6 +184,11 @@ export function Painel({ dados }: Props) {
  * duas ultimas ja levaram a IFT a abrir chamado de bug em cima de numero certo.
  */
 function notaDosLeads(m: Metrics): string | undefined {
+  // Quando a selecao e uma edicao, os leads vem da fonte da linha e sao os do
+  // periodo, nao os daquela edicao — quem separa uma edicao da outra e a data.
+  const fonte = m.fonteCompartilhada;
+  if (fonte && fonte.leads > 0) return 'Do período selecionado, não separado por edição';
+
   const balde = m.leadsCompartilhados;
   if (balde) {
     const quantos = `${numero(balde.quantidade)} lead${balde.quantidade === 1 ? '' : 's'}`;

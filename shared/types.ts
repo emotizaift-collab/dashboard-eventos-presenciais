@@ -111,6 +111,27 @@ export interface EventEdition {
   aliases: AliasConfig[];
   /** Janela padrao da edicao, usada pelos apelidos que nao tem a propria. */
   vigencia?: Vigencia;
+  /**
+   * Marca a edicao que nao e uma edicao: e a FONTE DE LEADS E TRAFEGO da linha
+   * inteira, e o que ela traz vale para qualquer edicao do mesmo evento.
+   *
+   * Existe porque as duas pontas do funil sao nomeadas de jeitos diferentes na
+   * origem. A venda chega com o nome do produto daquela edicao ("#03 DAY
+   * TRAINING – FORMACAO DE PALESTRANTES..."); o lead e a campanha chegam com um
+   * nome generico do evento ("PAI AO VIVO", "[PAI] [VENDAS] ..."), sem numero
+   * de edicao nenhum. Sem esta marca, escolher a edicao mostrava so metade do
+   * funil: faturamento e ingressos de um lado, leads e custo do outro.
+   *
+   * O que amarra as duas pontas e a DATA: o painel soma os leads e o custo do
+   * periodo escolhido. Edicoes acontecem em epocas diferentes, entao ajustar as
+   * datas para o periodo de uma edicao e o que separa uma da outra — o painel
+   * nao tem como fazer isso sozinho, e por isso avisa na tela.
+   *
+   * E configuracao de proposito: quando outro evento passar a ter produto de
+   * venda por edicao e produto de lead generico, basta marcar a fonte dele
+   * aqui, sem mexer em codigo.
+   */
+  fonteDaLinha?: boolean;
 }
 
 export interface EventLine {
@@ -282,6 +303,16 @@ export interface Metrics {
    * nao existem — eles existem, so nao da para separar dos do outro evento.
    */
   leadsCompartilhados: { rotulo: string; quantidade: number } | null;
+  /**
+   * Preenchido quando a selecao e uma edicao especifica e parte dos numeros veio
+   * da fonte compartilhada da linha (ver EventEdition.fonteDaLinha).
+   *
+   * O painel precisa dizer isso na tela: esses leads e esse custo sao os do
+   * PERIODO, nao os daquela edicao. Sem o aviso, escolher a edicao #03 com o
+   * filtro no historico inteiro mostra o custo do evento todo contra o
+   * faturamento de uma edicao so — e um prejuizo de R$ 121 mil que nao existe.
+   */
+  fonteCompartilhada: { rotulo: string; leads: number; custo: number } | null;
   participantes: number;
   custoPorLead: number | null;
   /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */
