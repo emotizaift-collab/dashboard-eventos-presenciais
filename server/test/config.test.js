@@ -96,9 +96,21 @@ test('a lista de campanhas ignoradas sobrevive a validacao', () => {
   // "IFT" entra pelo NOME INTEIRO: IFT e a sigla da propria empresa, e apagar
   // por tag faria uma campanha de evento marcada [IFT] sumir calada.
   const config = validateConfig(base());
-  assert.deepEqual(config.campanhasIgnoradas, ['DI', '[IFT] [LEADS] [ABO] [F] 28-02 SP']);
+  assert.ok(config.campanhasIgnoradas.includes('DI'));
+  assert.ok(config.campanhasIgnoradas.includes('[IFT] [LEADS] [ABO] [F] 28-02 SP'));
   assert.ok(
     !config.campanhasIgnoradas.includes('IFT'),
-    'IFT nunca pode virar tag: apagaria campanha de evento sem aviso',
+    'IFT nunca pode virar tag: e a sigla da propria empresa',
   );
+
+  // Nenhuma entrada pode ser uma sigla que os eventos presenciais usam.
+  const dosEventos = new Set(
+    config.eventLines
+      .flatMap((linha) => linha.editions)
+      .flatMap((edicao) => edicao.aliases)
+      .map((apelido) => (typeof apelido === 'string' ? apelido : apelido.nome).toUpperCase()),
+  );
+  for (const entrada of config.campanhasIgnoradas) {
+    assert.ok(!dosEventos.has(entrada.toUpperCase()), `"${entrada}" e apelido de evento`);
+  }
 });

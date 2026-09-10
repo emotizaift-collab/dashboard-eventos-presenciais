@@ -601,3 +601,27 @@ test('o balde e encontrado mesmo escolhendo uma edicao, nao a linha inteira', ()
   }).metrics;
   assert.equal(m.leadsCompartilhados?.quantidade, 1);
 });
+
+/**
+ * A lista de campanhas ignoradas so vale para campanha que o painel NAO
+ * reconhece. Se ela casa com um evento, o gasto e do evento e fica.
+ *
+ * Sem essa trava, uma sigla generica demais na lista comeria custo de evento
+ * em silencio — que e exatamente o tipo de perda invisivel que a lista existe
+ * para tornar visivel em outro lugar.
+ */
+test('campanha ignorada que pertence a um evento continua contando', () => {
+  const configComTagPerigosa = { ...config, campanhasIgnoradas: ['DAI', 'PAS'] };
+  const dados = {
+    leads: [], buyers: [], ambassadors: [], fetchedAt: '', warnings: [], falhas: [],
+    traffic: [
+      { date: '2026-09-05', campaign: '[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', editionId: 'dai-ed-01', lineId: 'dai', cost: 500 },
+    ],
+  };
+  const m = computeMetrics(configComTagPerigosa, dados, {
+    lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-30', campanhas: [],
+  }).metrics;
+  // A linha ja chega classificada do loader; o que este teste trava e que
+  // nenhuma etapa depois some com o custo de um evento reconhecido.
+  assert.equal(m.custoCampanha, 500);
+});

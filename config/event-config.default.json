@@ -394,6 +394,13 @@
   ],
   "campanhasIgnoradas": [
     "DI",
+    "PAS",
+    "NP",
+    "CDM",
+    "TV",
+    "CAI",
+    "7C",
+    "MI",
     "[IFT] [LEADS] [ABO] [F] 28-02 SP"
   ]
 }

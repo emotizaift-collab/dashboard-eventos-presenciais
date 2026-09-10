@@ -138,7 +138,16 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     // Sem data valida na coluna A a linha nao pertence a tabela diaria (rodape,
     // bloco de totais, area de anotacao). Descartar evita somar lixo no custo.
     if (!date || !campaign) continue;
-    if (ignorarCampanha.size > 0) {
+    const match = matchEdition(matcher, campaign, date);
+    // A lista de ignorar so tem forca sobre campanha que o painel NAO consegue
+    // atribuir a um evento. Se ela casa com um evento, o gasto e do evento e
+    // fica — mesmo que a lista peca para apagar.
+    //
+    // Sem esta trava a lista poderia comer dinheiro de evento em silencio, que
+    // e justamente o que ela existe para evitar em outro lugar. Ela tambem tira
+    // o peso de escolher entre apagar por tag ou por nome inteiro: mesmo uma
+    // tag generica demais nunca apaga um evento reconhecido.
+    if (!match && ignorarCampanha.size > 0) {
       const nomeInteiro = normalizeText(campaign);
       const motivo = ignorarCampanha.has(nomeInteiro)
         ? nomeInteiro
@@ -148,7 +157,6 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
         continue;
       }
     }
-    const match = matchEdition(matcher, campaign, date);
     traffic.push({
       date,
       campaign,
