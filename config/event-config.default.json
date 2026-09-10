@@ -20,7 +20,7 @@
         "event": "auto:Produto",
         "ticketType": "auto:Oferta",
         "ambassador": "",
-        "valor": ""
+        "valor": "auto:Valor Bruto"
       }
     },
     "traffic": {
@@ -342,7 +342,7 @@
       ]
     }
   ],
-  "usarValorDaPlanilha": false,
+  "usarValorDaPlanilha": true,
   "produtosIgnorados": [
     "PALESTRANTE DE ALTO IMPACTO",
     "PALESTRANTE DE ALTO IMPACTO [VITALICIO]",
