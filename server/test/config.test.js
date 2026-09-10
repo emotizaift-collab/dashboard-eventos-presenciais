@@ -98,10 +98,16 @@ test('a lista de campanhas ignoradas sobrevive a validacao', () => {
   const config = validateConfig(base());
   assert.ok(config.campanhasIgnoradas.includes('DI'));
   assert.ok(config.campanhasIgnoradas.includes('[IFT] [LEADS] [ABO] [F] 28-02 SP'));
-  assert.ok(
-    !config.campanhasIgnoradas.includes('IFT'),
-    'IFT nunca pode virar tag: e a sigla da propria empresa',
-  );
+  // Estas duas nunca podem virar tag: "IFT" e a sigla da propria empresa, e
+  // "ANIMA" e o nome do produto ANIMA, a um "DAY" de distancia do evento. Uma
+  // campanha do evento escrita "[ANIMA]" por engano sumiria sem aviso — e a
+  // trava do loader nao salva, porque "[ANIMA]" nao casa com o evento.
+  for (const perigosa of ['IFT', 'ANIMA']) {
+    assert.ok(
+      !config.campanhasIgnoradas.includes(perigosa),
+      `"${perigosa}" so pode ser ignorada pelo nome inteiro da campanha`,
+    );
+  }
 
   // Nenhuma entrada pode ser uma sigla que os eventos presenciais usam.
   const dosEventos = new Set(
