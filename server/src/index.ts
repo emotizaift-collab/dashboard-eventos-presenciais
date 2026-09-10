@@ -188,14 +188,20 @@ app.get('/api/diagnostics', async (req, res) => {
           res.status(404).json({ erro: `coluna "${colunaAvulsa}" nao encontrada`, cabecalho });
           return;
         }
-        // Recorte opcional por data, e soma opcional de uma coluna de dinheiro:
-        // e o que permite conferir "nesta data, este produto vendeu tanto".
+        // Recorte opcional por data (um dia com &data=, ou um intervalo com
+        // &de=/&ate=) e soma opcional de uma coluna de dinheiro: e o que permite
+        // conferir "nesta data, este produto vendeu tanto" e, principalmente,
+        // "a partir de tal dia, este nome de evento aparece quantas vezes" —
+        // a pergunta que decide a vigencia de um apelido ambiguo.
         const dataFiltro = typeof req.query.data === 'string' ? parseDate(req.query.data.trim()) : null;
+        const de = typeof req.query.de === 'string' ? parseDate(req.query.de.trim()) : null;
+        const ate = typeof req.query.ate === 'string' ? parseDate(req.query.ate.trim()) : null;
+        const filtraPorData = Boolean(dataFiltro || de || ate);
         const colunaData = typeof req.query.colunaData === 'string' ? req.query.colunaData.trim() : 'Data';
         const colunaSoma = typeof req.query.somar === 'string' ? req.query.somar.trim() : '';
-        const iData = dataFiltro ? resolveColumnIndex(`auto:${colunaData}`, cabecalho) : -1;
+        const iData = filtraPorData ? resolveColumnIndex(`auto:${colunaData}`, cabecalho) : -1;
         const iSoma = colunaSoma ? resolveColumnIndex(`auto:${colunaSoma}`, cabecalho) : -1;
-        if (dataFiltro && iData < 0) {
+        if (filtraPorData && iData < 0) {
           res.status(404).json({ erro: `coluna de data "${colunaData}" nao encontrada`, cabecalho });
           return;
         }
@@ -209,7 +215,13 @@ app.get('/api/diagnostics', async (req, res) => {
         for (let i = 1; i < linhas.length; i += 1) {
           const linha = linhas[i];
           if (!linha) continue;
-          if (dataFiltro && parseDate((linha[iData] ?? '').toString()) !== dataFiltro) continue;
+          if (filtraPorData) {
+            const dataDaLinha = parseDate((linha[iData] ?? '').toString());
+            if (!dataDaLinha) continue;
+            if (dataFiltro && dataDaLinha !== dataFiltro) continue;
+            if (de && dataDaLinha < de) continue;
+            if (ate && dataDaLinha > ate) continue;
+          }
           consideradas += 1;
           const valor = (linha[indice] ?? '').toString().trim();
           if (!valor) continue;
@@ -224,6 +236,7 @@ app.get('/api/diagnostics', async (req, res) => {
           aba: abaAvulsa,
           coluna: cabecalho[indice],
           filtroDeData: dataFiltro,
+          recorte: de || ate ? { de, ate } : null,
           colunaSomada: iSoma >= 0 ? cabecalho[iSoma] : null,
           totalDeLinhasNaAba: Math.max(0, linhas.length - 1),
           linhasNoRecorte: consideradas,

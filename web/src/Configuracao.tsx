@@ -117,6 +117,7 @@ export function Configuracao({ config, naoClassificado, aoSalvar }: Props) {
                   <strong>{ed.label}</strong>
                   {ed.current && <span className="tag-atual">Nome atual</span>}
                 </div>
+                {ed.vigencia && <p className="edicao-vigencia">{explicarVigencia(ed.vigencia)}</p>}
                 <div className="apelidos">
                   {ed.aliases.map((apelido) => (
                     <span className="apelido" key={apelido}>
@@ -587,4 +588,21 @@ function precoVisivel(tipo: AppConfig['ticketTypes'][number], precoBase: number)
 
 function clonar<T>(valor: T): T {
   return JSON.parse(JSON.stringify(valor)) as T;
+}
+
+
+/**
+ * Explica, em portugues, a janela de datas de uma edicao. Sem isso, quem edita
+ * os apelidos aqui nao tem como saber que aquele apelido so vale num periodo —
+ * e um apelido que "nao funciona" sem explicacao vira reclamacao ou, pior,
+ * numero errado.
+ */
+function explicarVigencia(vigencia: { de?: string; ate?: string }): string {
+  const dia = (iso: string) => iso.split('-').reverse().join('/');
+  if (vigencia.de && vigencia.ate) {
+    return `Estes apelidos só valem para linhas com data entre ${dia(vigencia.de)} e ${dia(vigencia.ate)}.`;
+  }
+  if (vigencia.de) return `Estes apelidos só valem a partir de ${dia(vigencia.de)}.`;
+  if (vigencia.ate) return `Estes apelidos só valem até ${dia(vigencia.ate)}.`;
+  return '';
 }

@@ -18,6 +18,8 @@ interface CompiledAlias {
   lineId: string;
   editionId: string;
   alias: string;
+  vigenciaDe?: string;
+  vigenciaAte?: string;
 }
 
 interface CompiledTicketAlias {
@@ -46,7 +48,13 @@ export function compileMatcher(config: AppConfig): CompiledMatcher {
       for (const alias of edition.aliases) {
         const normalized = normalizeText(alias);
         if (normalized) {
-          aliases.push({ lineId: line.id, editionId: edition.id, alias: normalized });
+          aliases.push({
+          lineId: line.id,
+          editionId: edition.id,
+          alias: normalized,
+          vigenciaDe: edition.vigencia?.de,
+          vigenciaAte: edition.vigencia?.ate,
+        });
         }
       }
     }
@@ -98,7 +106,12 @@ export function compileMatcher(config: AppConfig): CompiledMatcher {
  * Casa um texto livre (nome de campanha ou nome de evento) com uma edicao.
  * Retorna null quando nada casa — esses valores viram "nao classificado" no painel.
  */
-export function matchEdition(matcher: CompiledMatcher, value: unknown): EditionMatch | null {
+export function matchEdition(
+  matcher: CompiledMatcher,
+  value: unknown,
+  /** Data da linha, em AAAA-MM-DD. Necessaria para apelidos com vigencia. */
+  data?: string | null,
+): EditionMatch | null {
   const text = normalizeText(value);
   if (!text) return null;
   const tags = extractTags(value);
@@ -106,6 +119,13 @@ export function matchEdition(matcher: CompiledMatcher, value: unknown): EditionM
   let best: { match: EditionMatch; score: number; length: number } | null = null;
 
   for (const entry of matcher.aliases) {
+    if (entry.vigenciaDe || entry.vigenciaAte) {
+      // Sem data nao da para conferir a janela: melhor nao casar do que chutar.
+      if (!data) continue;
+      if (entry.vigenciaDe && data < entry.vigenciaDe) continue;
+      if (entry.vigenciaAte && data > entry.vigenciaAte) continue;
+    }
+
     let score = 0;
 
     if (text === entry.alias) {

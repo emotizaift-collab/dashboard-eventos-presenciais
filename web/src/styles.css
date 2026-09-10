@@ -293,3 +293,10 @@ code.mono { font-family: inherit; background: var(--superficie); padding: 2px 7p
   .linhas { grid-template-columns: 1fr; }
   .linha-item { border-left: 0; padding-left: 0; }
 }
+
+/* Aviso discreto da janela de datas de uma edicao (ver explicarVigencia). */
+.edicao-vigencia {
+  margin: 2px 0 6px;
+  font-size: 12px;
+  color: var(--texto-fraco);
+}

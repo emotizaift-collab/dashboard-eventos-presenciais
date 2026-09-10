@@ -69,6 +69,18 @@ export interface EventEdition {
   label: string;
   current: boolean;
   aliases: string[];
+  /**
+   * Janela de validade dos apelidos desta edicao, em AAAA-MM-DD.
+   *
+   * Existe porque um mesmo texto pode mudar de dono ao longo do tempo: na
+   * planilha de leads da IFT, "DAY TRAINING" servia a dois eventos e, a partir
+   * de 04/09/2026, passou a ser so do ANIMA Day. Sem a janela, ou os leads
+   * antigos entram no evento errado, ou os 559 sao descartados.
+   *
+   * Linha sem data nao casa com apelido que tenha vigencia: nao da para
+   * verificar, e chutar aqui vira lead no evento errado.
+   */
+  vigencia?: { de?: string; ate?: string };
 }
 
 export interface EventLine {

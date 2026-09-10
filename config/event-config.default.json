@@ -224,14 +224,18 @@
           ]
         },
         {
-          "id": "anima-historico",
-          "label": "Nomes antigos (leads)",
+          "id": "anima-day-training",
+          "label": "Day Training (leads, a partir de 04/09/2026)",
           "current": false,
           "aliases": [
-            "Day Training Sist",
+            "DAY TRAINING",
+            "Day Training",
             "DAYTRAINING",
             "DAY TRAININ"
-          ]
+          ],
+          "vigencia": {
+            "de": "2026-09-04"
+          }
         }
       ]
     },
@@ -336,8 +340,29 @@
           "current": false,
           "aliases": [
             "DINAMICASAOVIVO",
-            "Dinâmicas ao Vivo"
+            "Dinâmicas ao Vivo",
+            "Day Training Sist"
           ]
+        }
+      ]
+    },
+    {
+      "id": "day-training-compartilhado",
+      "label": "Day Training (ANIMA + Dinâmicas, sem separação)",
+      "editions": [
+        {
+          "id": "dt-ambiguo",
+          "label": "Leads até 03/09/2026",
+          "current": false,
+          "aliases": [
+            "DAY TRAINING",
+            "Day Training",
+            "DAYTRAINING",
+            "DAY TRAININ"
+          ],
+          "vigencia": {
+            "ate": "2026-09-03"
+          }
         }
       ]
     }

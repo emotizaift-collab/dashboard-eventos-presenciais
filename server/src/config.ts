@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AppConfig, TicketTypeConfig } from '../../shared/types.js';
+import type { AppConfig, EventEdition, TicketTypeConfig } from '../../shared/types.js';
 
 /**
  * Raiz do projeto. Sobe os diretorios ate achar o package.json, para funcionar
@@ -88,6 +88,7 @@ export function validateConfig(config: AppConfig): AppConfig {
       if (!Array.isArray(edition.aliases)) edition.aliases = [];
       edition.aliases = edition.aliases.map((alias) => String(alias).trim()).filter(Boolean);
       edition.current = Boolean(edition.current);
+      validarVigencia(edition);
     }
   }
 
@@ -126,6 +127,35 @@ export function validateConfig(config: AppConfig): AppConfig {
   }
 
   return config;
+}
+
+/**
+ * A vigencia e comparada como texto (AAAA-MM-DD < AAAA-MM-DD), que so funciona
+ * nesse formato. Uma data escrita como 04/09/2026 nao daria erro em lugar
+ * nenhum: o apelido simplesmente nunca casaria, e os leads sumiriam calados —
+ * que foi exatamente o estrago que a vigencia veio consertar. Por isso barrar
+ * aqui, na hora de salvar, e nao deixar passar.
+ */
+function validarVigencia(edition: EventEdition): void {
+  const vigencia = edition.vigencia;
+  if (!vigencia) return;
+  const { de, ate } = vigencia;
+  if (de === undefined && ate === undefined) {
+    delete edition.vigencia;
+    return;
+  }
+  for (const [campo, valor] of [['de', de], ['ate', ate]] as const) {
+    if (valor === undefined) continue;
+    if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+      throw new Error(
+        `"${edition.label}": a data "${campo}" da vigencia precisa estar no formato ` +
+          `AAAA-MM-DD (recebi "${valor}")`,
+      );
+    }
+  }
+  if (de && ate && de > ate) {
+    throw new Error(`"${edition.label}": a vigencia comeca (${de}) depois de terminar (${ate})`);
+  }
 }
 
 /**

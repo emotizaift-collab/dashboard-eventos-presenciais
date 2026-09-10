@@ -30,8 +30,8 @@ const casos = [
   // Evento B — nome novo
   ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-atual'],
   ['ANIMA Day', 'anima', 'anima-atual'],
-  // Evento B — nome historico
-  ['Day Training Sist', 'anima', 'anima-historico'],
+  // "Day Training Sist" e o Dinamicas Sistemicas abreviado — nao o ANIMA.
+  ['Day Training Sist', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
 ];
 
 test('reconhece as campanhas e os nomes dos dois eventos', () => {
@@ -98,9 +98,11 @@ test('apelidos escritos com espaco tambem sao reconhecidos', () => {
   assert.ok(pai, '"PAI AO VIVO" precisa ser reconhecido');
   assert.equal(pai.editionId, 'fp-nomes-antigos');
 
-  const day = matchEdition(matcher, 'DAY TRAININ');
-  assert.ok(day, '"DAY TRAININ" (digitado incompleto na planilha) precisa ser reconhecido');
-  assert.equal(day.editionId, 'anima-historico');
+  // "DAY TRAININ" (digitado incompleto na planilha) e um dos nomes genericos:
+  // depende da data da linha. A regra completa esta nos testes de vigencia.
+  const day = matchEdition(matcher, 'DAY TRAININ', '2026-09-10');
+  assert.ok(day, '"DAY TRAININ" precisa ser reconhecido');
+  assert.equal(day.editionId, 'anima-day-training');
 });
 
 test('linha de acompanhante e reconhecida e nunca vira ingresso', () => {
@@ -288,4 +290,63 @@ test('as tres linhas de evento continuam separadas', () => {
   assert.equal(linhaDe('#02 Day Training - Dinâmicas Sistêmicas'), 'dinamicas-sistemicas');
   assert.equal(linhaDe('#01  ÂNIMA Day Training'), 'anima');
   assert.equal(linhaDe('#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata'), 'formacao-palestrantes');
+});
+
+
+/**
+ * "DAY TRAINING", sozinho, nao diz de qual evento o lead e: ANIMA Day e
+ * Dinamicas Sistemicas sao os dois series "Day Training", e a planilha de leads
+ * escreve so isso em 559 linhas. A IFT confirmou a regra: ate 03/09/2026 o nome
+ * servia aos dois eventos; de 04/09/2026 em diante e so do ANIMA Day.
+ *
+ * Por isso o apelido tem VIGENCIA, e a data da linha decide o dono. Sem esses
+ * testes o erro volta calado: o painel simplesmente para de contar os leads (foi
+ * o que aconteceu antes, com 60% dos leads sumindo sem nenhum aviso).
+ */
+test('"DAY TRAINING" muda de dono conforme a data do lead', () => {
+  const dono = (data) => matchEdition(matcher, 'DAY TRAINING', data);
+
+  // Antes da virada: fica no balde compartilhado, nao no ANIMA.
+  assert.equal(dono('2026-09-03')?.lineId, 'day-training-compartilhado');
+  assert.equal(dono('2025-01-15')?.lineId, 'day-training-compartilhado');
+
+  // No dia da virada e depois: ANIMA Day.
+  assert.equal(dono('2026-09-04')?.lineId, 'anima');
+  assert.equal(dono('2026-09-10')?.lineId, 'anima');
+  assert.equal(dono('2027-03-01')?.lineId, 'anima');
+});
+
+test('as variacoes de grafia de "DAY TRAINING" seguem a mesma regra', () => {
+  for (const texto of ['DAY TRAINING', 'Day Training', 'DAYTRAINING', 'DAY TRAININ']) {
+    assert.equal(matchEdition(matcher, texto, '2026-09-10')?.lineId, 'anima', texto);
+    assert.equal(
+      matchEdition(matcher, texto, '2026-01-10')?.lineId,
+      'day-training-compartilhado',
+      texto,
+    );
+  }
+});
+
+test('linha sem data nao casa com apelido que depende de data', () => {
+  // Chutar a janela seria pior do que nao classificar: o numero sairia errado
+  // sem ninguem perceber. Sem data, o lead vai para "nao classificado".
+  assert.equal(matchEdition(matcher, 'DAY TRAINING', null), null);
+  assert.equal(matchEdition(matcher, 'DAY TRAINING'), null);
+});
+
+test('o apelido generico nao rouba os nomes completos dos eventos', () => {
+  // Todos estes contem "DAY TRAINING" e caem dentro da vigencia do ANIMA, mas
+  // o nome exato tem que ganhar do generico.
+  const dentroDaVigencia = '2026-09-10';
+  const casos = [
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'dinamicas-sistemicas'],
+    ['Day Training - Dinâmicas Sistêmicas', 'dinamicas-sistemicas'],
+    ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'formacao-palestrantes'],
+    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes'],
+    ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata', 'dai'],
+    ['#01  ÂNIMA Day Training', 'anima'],
+  ];
+  for (const [texto, linhaEsperada] of casos) {
+    assert.equal(matchEdition(matcher, texto, dentroDaVigencia)?.lineId, linhaEsperada, texto);
+  }
 });

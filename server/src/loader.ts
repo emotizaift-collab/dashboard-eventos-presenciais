@@ -53,7 +53,7 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     const rawEvent = cell(row, leadsEventCol);
     const date = parseDate(cell(row, leadsDateCol));
     if (!rawEvent && !date) continue;
-    const match = matchEdition(matcher, rawEvent);
+    const match = matchEdition(matcher, rawEvent, date);
     leads.push({
       date,
       rawEvent,
@@ -97,11 +97,12 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
       linhasIgnoradas += 1;
       continue;
     }
-    const match = matchEdition(matcher, rawEvent);
+    const date = parseDate(cell(row, buyersDateCol));
+    const match = matchEdition(matcher, rawEvent, date);
     buyers.push({
       linha: i + 1,
       valor: buyersValorCol >= 0 ? parseMoney(cell(row, buyersValorCol)) : null,
-      date: parseDate(cell(row, buyersDateCol)),
+      date,
       rawEvent,
       editionId: match?.editionId ?? null,
       lineId: match?.lineId ?? null,
@@ -127,7 +128,7 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     // Sem data valida na coluna A a linha nao pertence a tabela diaria (rodape,
     // bloco de totais, area de anotacao). Descartar evita somar lixo no custo.
     if (!date || !campaign) continue;
-    const match = matchEdition(matcher, campaign);
+    const match = matchEdition(matcher, campaign, date);
     traffic.push({
       date,
       campaign,
@@ -165,10 +166,11 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
       const nome = cell(row, colNome);
       if (!nome) continue;
       const rawEvent = cell(row, colEvento);
-      const match = matchEdition(matcher, rawEvent);
+      const date = parseDate(cell(row, colData));
+      const match = matchEdition(matcher, rawEvent, date);
       ambassadors.push({
         linha: i + 1,
-        date: parseDate(cell(row, colData)),
+        date,
         rawEvent,
         editionId: match?.editionId ?? null,
         lineId: match?.lineId ?? null,
