@@ -199,15 +199,6 @@
           "aliases": [
             "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata"
           ]
-        },
-        {
-          "id": "dai-historico",
-          "label": "Dinâmicas ao Vivo (nomes antigos)",
-          "current": false,
-          "aliases": [
-            "DINAMICASAOVIVO",
-            "Dinâmicas ao Vivo"
-          ]
         }
       ]
     },
@@ -337,6 +328,15 @@
           "current": true,
           "aliases": [
             "#04 Day Training - Dinâmicas Sistêmicas"
+          ]
+        },
+        {
+          "id": "ds-nomes-antigos",
+          "label": "Dinâmicas ao Vivo (leads e tráfego)",
+          "current": false,
+          "aliases": [
+            "DINAMICASAOVIVO",
+            "Dinâmicas ao Vivo"
           ]
         }
       ]

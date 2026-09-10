@@ -24,8 +24,9 @@ const casos = [
   ['[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA', 'formacao-palestrantes', 'fp-nomes-antigos'],
   ['[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26', 'formacao-palestrantes', 'fp-nomes-antigos'],
   ['Palestrante de Alto Impacto', 'formacao-palestrantes', 'fp-nomes-antigos'],
-  // "Dinamicas ao Vivo" fala de Dinamicas, nao de Palestrante: fica no DAI.
-  ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dai', 'dai-historico'],
+  // "Dinamicas ao Vivo" e o nome antigo do Dinamicas Sistemicas, confirmado
+  // pela IFT — nao do Dinamicas de Alto Impacto, como dizia a especificacao.
+  ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
   // Evento B — nome novo
   ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-atual'],
   ['ANIMA Day', 'anima', 'anima-atual'],
