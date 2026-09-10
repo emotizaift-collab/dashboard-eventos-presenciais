@@ -121,8 +121,13 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
 
   // Campanhas de outros produtos da empresa: a planilha de trafego e o plano de
   // midia inteiro, e o gasto delas so aparecia como "custo sem evento".
-  const tagsIgnoradas = new Set((config.campanhasIgnoradas ?? []).map((tag) => normalizeText(tag)));
-  let campanhasIgnoradas = 0;
+  // Cada entrada e uma tag entre colchetes ou o nome inteiro da campanha.
+  const ignorarCampanha = new Set(
+    (config.campanhasIgnoradas ?? []).map((entrada) => normalizeText(entrada)).filter(Boolean),
+  );
+  // Quanto cada entrada apagou. Uma entrada que apaga demais (uma tag generica)
+  // ou de menos (erro de digitacao) so aparece se alguem contar.
+  const apagadasPorEntrada = new Map<string, number>();
 
   const traffic: TrafficRow[] = [];
   for (let i = trafficHeaderIndex + 1; i < trafficRaw.length; i += 1) {
@@ -133,9 +138,15 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     // Sem data valida na coluna A a linha nao pertence a tabela diaria (rodape,
     // bloco de totais, area de anotacao). Descartar evita somar lixo no custo.
     if (!date || !campaign) continue;
-    if (tagsIgnoradas.size > 0 && extractTags(campaign).some((tag) => tagsIgnoradas.has(tag))) {
-      campanhasIgnoradas += 1;
-      continue;
+    if (ignorarCampanha.size > 0) {
+      const nomeInteiro = normalizeText(campaign);
+      const motivo = ignorarCampanha.has(nomeInteiro)
+        ? nomeInteiro
+        : extractTags(campaign).find((tag) => ignorarCampanha.has(tag));
+      if (motivo) {
+        apagadasPorEntrada.set(motivo, (apagadasPorEntrada.get(motivo) ?? 0) + 1);
+        continue;
+      }
     }
     const match = matchEdition(matcher, campaign, date);
     traffic.push({
@@ -150,8 +161,16 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
   if (linhasIgnoradas > 0) {
     console.log(`[loader] ${linhasIgnoradas} linha(s) ignoradas por produtosIgnorados`);
   }
-  if (campanhasIgnoradas > 0) {
-    console.log(`[loader] ${campanhasIgnoradas} linha(s) de trafego ignoradas por campanhasIgnoradas`);
+  for (const [entrada, quantas] of apagadasPorEntrada) {
+    console.log(`[loader] campanhasIgnoradas "${entrada}": ${quantas} linha(s) de trafego fora`);
+  }
+  for (const entrada of ignorarCampanha) {
+    if (!apagadasPorEntrada.has(entrada)) {
+      warnings.push(
+        `A campanha "${entrada}", marcada para ser ignorada, nao existe na planilha de trafego. ` +
+          'Confira a grafia em "Ajustes avancados" — do jeito que esta, ela nao esta apagando nada.',
+      );
+    }
   }
 
   // --- Embaixadores ---

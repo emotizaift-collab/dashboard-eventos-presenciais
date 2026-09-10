@@ -157,15 +157,25 @@ export interface AppConfig {
     ambassadors?: SourceConfig<ColumnMapAmbassadors>;
   };
   /**
-   * Tags de campanha que pertencem a outros produtos da empresa, sem colchetes
-   * (ex.: "DI" para as campanhas "[DI] [VENDAS] ..." das Dinamicas Infinitas,
-   * um produto digital).
+   * Campanhas de outros produtos da empresa, para sumirem do painel.
+   *
+   * Cada entrada pode ser uma TAG entre colchetes, escrita sem os colchetes
+   * ("DI" apaga toda campanha "[DI] ...", das Dinamicas Infinitas), ou o NOME
+   * INTEIRO de uma campanha ("[IFT] [LEADS] [ABO] [F] 28-02 SP").
+   *
+   * Os dois jeitos existem porque erram de formas diferentes. A tag pega
+   * tambem as campanhas futuras dela — otimo para uma sigla que so aquele
+   * produto usa, perigoso para uma sigla generica: uma campanha nova de evento
+   * marcada com aquela tag sumiria calada. O nome inteiro nunca apaga nada
+   * alem do que esta escrito aqui; se aparecer uma campanha nova do mesmo
+   * produto, ela volta a aparecer no alerta e alguem avisa. Para "IFT", que e
+   * a sigla da propria empresa, a segunda forma e a unica segura.
    *
    * A planilha de trafego e o plano de midia da empresa inteira, nao so dos
-   * eventos presenciais. Sem esta lista, o gasto desses produtos aparece como
-   * "custo de campanha sem evento" — um alerta de R$ 74 mil que na verdade e
-   * so o resto da empresa. Alerta que e quase todo ruido para de ser lido, e
-   * ai o problema de verdade passa junto.
+   * eventos presenciais. Sem esta lista, o gasto dos outros produtos aparece
+   * como "custo de campanha sem evento" — um alerta de R$ 74 mil que na
+   * verdade e so o resto da empresa. Alerta que e quase todo ruido para de ser
+   * lido, e ai o problema de verdade passa junto.
    */
   campanhasIgnoradas?: string[];
   ticketTypes: TicketTypeConfig[];

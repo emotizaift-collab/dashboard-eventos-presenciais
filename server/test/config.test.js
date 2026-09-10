@@ -87,9 +87,18 @@ test('apelido sem nome e descartado, em vez de virar apelido vazio', () => {
 });
 
 test('a lista de campanhas ignoradas sobrevive a validacao', () => {
-  // "DI" sao as campanhas das Dinamicas Infinitas, produto digital confirmado
-  // pela IFT. Sem esta lista, os R$ 40 mil delas apareciam como "custo de
-  // campanha sem evento" — um alerta que era quase todo ruido.
+  // Sao campanhas de outros produtos da empresa, confirmadas pela IFT. Sem
+  // esta lista, o gasto delas aparecia como "custo de campanha sem evento" —
+  // um alerta que era quase todo ruido.
+  //
+  // "DI" (Dinamicas Infinitas) entra como TAG, porque a sigla so aquele
+  // produto usa e assim as campanhas [DI] futuras ja nascem de fora. A do
+  // "IFT" entra pelo NOME INTEIRO: IFT e a sigla da propria empresa, e apagar
+  // por tag faria uma campanha de evento marcada [IFT] sumir calada.
   const config = validateConfig(base());
-  assert.deepEqual(config.campanhasIgnoradas, ['DI']);
+  assert.deepEqual(config.campanhasIgnoradas, ['DI', '[IFT] [LEADS] [ABO] [F] 28-02 SP']);
+  assert.ok(
+    !config.campanhasIgnoradas.includes('IFT'),
+    'IFT nunca pode virar tag: apagaria campanha de evento sem aviso',
+  );
 });
