@@ -94,7 +94,8 @@ test('classifica os tipos de ingresso escritos de varios jeitos', () => {
 
 test('apelidos escritos com espaco tambem sao reconhecidos', () => {
   // Valores reais encontrados nas planilhas de leads e de compradores.
-  const pai = matchEdition(matcher, 'PAI AO VIVO');
+  // "PAI AO VIVO" depende da data: a regra completa esta nos testes de vigencia.
+  const pai = matchEdition(matcher, 'PAI AO VIVO', '2026-08-01');
   assert.ok(pai, '"PAI AO VIVO" precisa ser reconhecido');
   assert.equal(pai.editionId, 'fp-nomes-antigos');
 
@@ -427,4 +428,48 @@ test('so as edicoes sem produto proprio tem rotulo descritivo', () => {
     .filter((e) => e.label !== (typeof e.aliases[0] === 'string' ? e.aliases[0] : null))
     .map((e) => e.id);
   assert.deepEqual(semProduto.sort(), ['ds-nomes-antigos', 'dt-ambiguo', 'fp-nomes-antigos']);
+});
+
+
+/**
+ * "PAI AO VIVO" e o unico texto que a aba de leads usa para o publico de
+ * palestrantes, e ele trocou de evento no meio do caminho: ate 02/09/2026 sao
+ * interessados na Formacao de Palestrantes; de 04/09/2026 em diante o mesmo
+ * texto passou a ser Dinamicas de Alto Impacto (regra confirmada pela IFT).
+ *
+ * O dia 03/09/2026 ficou deliberadamente sem dono: a IFT nao o citou, e nao ha
+ * nenhum lead nele. Um lead lancado ali depois aparece como nao reconhecido, em
+ * vez de ser chutado para um dos dois eventos sem ninguem ficar sabendo.
+ */
+test('"PAI AO VIVO" muda de evento em 04/09/2026', () => {
+  const dono = (data) => matchEdition(matcher, 'PAI AO VIVO', data);
+
+  assert.equal(dono('2025-06-10')?.lineId, 'formacao-palestrantes');
+  assert.equal(dono('2026-09-02')?.lineId, 'formacao-palestrantes');
+
+  assert.equal(dono('2026-09-03'), null, 'o dia da virada nao pertence a ninguem');
+
+  assert.equal(dono('2026-09-04')?.lineId, 'dai');
+  assert.equal(dono('2026-09-10')?.lineId, 'dai');
+  assert.equal(dono('2027-01-05')?.lineId, 'dai');
+});
+
+test('a virada do "PAI AO VIVO" nao mexe nas campanhas de trafego', () => {
+  // A IFT falou so do texto da aba de leads. O trafego usa tags proprias e ja
+  // tem campanha separada do DAI desde 04/09, entao mexer nelas seria invencao
+  // minha — e moveria mais de cem mil reais de custo de um evento para outro
+  // sem ninguem ter pedido.
+  const depois = '2026-09-10';
+  const campanhas = [
+    '[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA',
+    '[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP',
+    '[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26',
+  ];
+  for (const campanha of campanhas) {
+    assert.equal(matchEdition(matcher, campanha, depois)?.lineId, 'formacao-palestrantes', campanha);
+  }
+  assert.equal(
+    matchEdition(matcher, '[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', depois)?.lineId,
+    'dai',
+  );
 });

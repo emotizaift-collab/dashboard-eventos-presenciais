@@ -190,7 +190,13 @@
             "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata",
             "DAI",
             "Dinâmicas de Alto Impacto",
-            "Dinamicas de Alto Impacto"
+            "Dinamicas de Alto Impacto",
+            {
+              "nome": "PAI AO VIVO",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            }
           ]
         }
       ]
@@ -286,7 +292,12 @@
           "aliases": [
             "PAI",
             "PAIAOVIVO",
-            "PAI AO VIVO",
+            {
+              "nome": "PAI AO VIVO",
+              "vigencia": {
+                "ate": "2026-09-02"
+              }
+            },
             "PAI 147$",
             "Palestrante de Alto Impacto",
             "Palestrante ao Vivo"
