@@ -12,15 +12,15 @@
       }
     },
     "buyers": {
-      "spreadsheetId": "1KNrlzQwoqT1tW4O2JDeo6fn9SH0t2M2CoTWRO546Y5o",
-      "tab": "VENDAS TOTAL LOW TICKET (IFT + IFTS)",
+      "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
+      "tab": "COPIA COMPRADORES PRESENCIAL",
       "headerRow": 1,
       "columns": {
-        "date": "auto:Data de pagamento",
-        "event": "auto:Produto",
-        "ticketType": "auto:Oferta",
-        "ambassador": "",
-        "valor": "auto:VALOR TOTAL DA VENDA"
+        "date": "auto:DATA DA VENDA",
+        "event": "auto:EVENTO",
+        "ticketType": "auto:TIPO DE INGRESSO",
+        "ambassador": "auto:EMBAIXADOR",
+        "valor": ""
       }
     },
     "traffic": {
@@ -226,7 +226,7 @@
       ]
     }
   ],
-  "usarValorDaPlanilha": true,
+  "usarValorDaPlanilha": false,
   "produtosIgnorados": [
     "PALESTRANTE DE ALTO IMPACTO",
     "PALESTRANTE DE ALTO IMPACTO [VITALICIO]"
