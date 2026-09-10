@@ -7,8 +7,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { store } from './store.js';
 import { ROOT } from './config.js';
 import { computeMetrics, listDays } from './metrics.js';
-import { lookupTab } from './normalize.js';
-import { hasCredentials, listTabs, readHeader, serviceAccountEmail } from './sheets.js';
+import { lookupTab, resolveColumnIndex } from './normalize.js';
+import { hasCredentials, listTabs, readHeader, readTab, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -171,6 +171,45 @@ app.get('/api/diagnostics', async (req, res) => {
       res.status(400).json({ erro: 'sem a chave do Google nao da para inspecionar uma planilha' });
       return;
     }
+    // Com &aba=...&coluna=..., amostra os valores distintos daquela coluna.
+    // Saber QUE textos existem numa coluna e o que decide se os apelidos ja
+    // cadastrados continuam valendo, antes de trocar a fonte e descobrir depois.
+    const abaAvulsa = typeof req.query.aba === 'string' ? req.query.aba.trim() : '';
+    const colunaAvulsa = typeof req.query.coluna === 'string' ? req.query.coluna.trim() : '';
+    if (abaAvulsa && colunaAvulsa) {
+      try {
+        const linhas = await readTab(idAvulso, abaAvulsa);
+        const cabecalho = linhas[0] ?? [];
+        const indice = resolveColumnIndex(
+          /^[A-Z]{1,2}$/i.test(colunaAvulsa) ? colunaAvulsa : `auto:${colunaAvulsa}`,
+          cabecalho,
+        );
+        if (indice < 0) {
+          res.status(404).json({ erro: `coluna "${colunaAvulsa}" nao encontrada`, cabecalho });
+          return;
+        }
+        const contagem = new Map<string, number>();
+        for (let i = 1; i < linhas.length; i += 1) {
+          const valor = (linhas[i]?.[indice] ?? '').toString().trim();
+          if (!valor) continue;
+          contagem.set(valor, (contagem.get(valor) ?? 0) + 1);
+        }
+        res.json({
+          spreadsheetId: idAvulso,
+          aba: abaAvulsa,
+          coluna: cabecalho[indice],
+          totalDeLinhas: Math.max(0, linhas.length - 1),
+          valores: [...contagem.entries()]
+            .map(([valor, linhas2]) => ({ valor, linhas: linhas2 }))
+            .sort((a, b) => b.linhas - a.linhas)
+            .slice(0, 80),
+        });
+      } catch (error) {
+        res.status(502).json({ erro: error instanceof Error ? error.message : String(error) });
+      }
+      return;
+    }
+
     try {
       const abas = await listTabs(idAvulso);
       const colunasPorAba: Record<string, string[] | string> = {};
