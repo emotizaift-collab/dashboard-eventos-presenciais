@@ -173,7 +173,14 @@ export function computeMetrics(
       participantes: (contagem.get(tipo.id) ?? 0) * tipo.cadeiras,
     }));
 
-  const comEmbaixador = buyers.filter((row) => row.ambassador.trim() !== '');
+  // Convites vem de data.ambassadors, que o loader monta da aba dedicada ou,
+  // na falta dela, das proprias linhas de venda.
+  const comEmbaixador = data.ambassadors.filter(
+    (row) =>
+      matchesFilter(filter, row.lineId, row.editionId) &&
+      noEscopoDasCampanhas(row.lineId) &&
+      inRange(row.date, filter.from, filter.to),
+  );
   const convidados = comEmbaixador.length;
   const embaixadores = new Set(
     comEmbaixador.map((row) => row.ambassador.trim().toLowerCase()),

@@ -1,5 +1,6 @@
 /** Transforma as celulas cruas das abas nas linhas normalizadas que o painel usa. */
 import type {
+  AmbassadorRow,
   AppConfig,
   BuyerRow,
   DataSet,
@@ -23,10 +24,14 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
   const warnings: string[] = [];
   const falhas: string[] = [];
 
-  const [leadsRaw, buyersRaw, trafficRaw] = await Promise.all([
+  const fonteEmbaixadores = config.sources.ambassadors;
+  const [leadsRaw, buyersRaw, trafficRaw, embaixadoresRaw] = await Promise.all([
     readTabSafe(config.sources.leads.spreadsheetId, config.sources.leads.tab, 'leads', falhas),
     readTabSafe(config.sources.buyers.spreadsheetId, config.sources.buyers.tab, 'compradores', falhas),
     readTabSafe(config.sources.traffic.spreadsheetId, config.sources.traffic.tab, 'trafego', falhas),
+    fonteEmbaixadores
+      ? readTabSafe(fonteEmbaixadores.spreadsheetId, fonteEmbaixadores.tab, 'embaixadores', falhas)
+      : Promise.resolve([] as string[][]),
   ]);
 
   // --- Leads ---
@@ -136,7 +141,55 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     console.log(`[loader] ${linhasIgnoradas} linha(s) ignoradas por produtosIgnorados`);
   }
 
-  return { leads, buyers, traffic, fetchedAt: new Date().toISOString(), warnings, falhas };
+  // --- Embaixadores ---
+  //
+  // Quando ha aba dedicada, os convites vem dela. Ela tem coluna de evento, entao
+  // da para contar por evento sem casar linha a linha com a aba de vendas — o que
+  // seria frageil, porque as duas abas nao compartilham nenhuma chave confiavel.
+  let ambassadors: AmbassadorRow[];
+  if (fonteEmbaixadores) {
+    const cabecalho = embaixadoresRaw[fonteEmbaixadores.headerRow - 1] ?? [];
+    const colData = resolveColumnIndex(fonteEmbaixadores.columns.date, cabecalho);
+    const colEvento = resolveColumnIndex(fonteEmbaixadores.columns.event, cabecalho);
+    const colNome = resolveColumnIndex(fonteEmbaixadores.columns.ambassador, cabecalho);
+    if (colNome < 0 && embaixadoresRaw.length > 0) {
+      warnings.push(
+        `Nao encontrei a coluna do embaixador na aba "${fonteEmbaixadores.tab}". ` +
+          'Embaixadores e Convidados vao aparecer zerados.',
+      );
+    }
+    ambassadors = [];
+    for (let i = fonteEmbaixadores.headerRow; i < embaixadoresRaw.length; i += 1) {
+      const row = embaixadoresRaw[i];
+      if (!row) continue;
+      const nome = cell(row, colNome);
+      if (!nome) continue;
+      const rawEvent = cell(row, colEvento);
+      const match = matchEdition(matcher, rawEvent);
+      ambassadors.push({
+        linha: i + 1,
+        date: parseDate(cell(row, colData)),
+        rawEvent,
+        editionId: match?.editionId ?? null,
+        lineId: match?.lineId ?? null,
+        ambassador: nome,
+      });
+    }
+  } else {
+    // Sem aba dedicada, o convite vem da propria linha de venda, como antes.
+    ambassadors = buyers
+      .filter((row) => row.ambassador.trim() !== '')
+      .map((row) => ({
+        linha: row.linha,
+        date: row.date,
+        rawEvent: row.rawEvent,
+        editionId: row.editionId,
+        lineId: row.lineId,
+        ambassador: row.ambassador,
+      }));
+  }
+
+  return { leads, buyers, traffic, ambassadors, fetchedAt: new Date().toISOString(), warnings, falhas };
 }
 
 async function readTabSafe(

@@ -60,9 +60,10 @@ test('as abas configuradas por padrao batem com as reais das planilhas', () => {
   ];
 
   assert.equal(lookupTab(config.sources.leads.tab, ABAS_BASE_DE_LEADS).exata, true);
-  assert.equal(lookupTab(config.sources.buyers.tab, ABAS_BASE_DE_LEADS).exata, true);
-  assert.ok(abasVendasDashboard.length > 0);
   assert.equal(lookupTab(config.sources.traffic.tab, abasTrafego).exata, true);
+  // Vendas e embaixadores vem da planilha "VENDAS - DASHBOARD".
+  assert.equal(lookupTab(config.sources.buyers.tab, abasVendasDashboard).exata, true);
+  assert.equal(lookupTab(config.sources.ambassadors.tab, abasVendasDashboard).exata, true);
 });
 
 test('a aba de vendas nova nao e confundida com as vizinhas de nome parecido', () => {

@@ -44,6 +44,13 @@ export interface ColumnMapBuyers {
   /** Coluna com o valor da venda. Vazio quando o valor deve ser calculado. */
   valor?: string;
 }
+/** Aba usada so para contar embaixadores e convidados. */
+export interface ColumnMapAmbassadors {
+  date: string;
+  event: string;
+  ambassador: string;
+}
+
 export interface ColumnMapTraffic {
   date: string;
   campaign: string;
@@ -90,6 +97,11 @@ export interface AppConfig {
     leads: SourceConfig<ColumnMapLeads>;
     buyers: SourceConfig<ColumnMapBuyers>;
     traffic: SourceConfig<ColumnMapTraffic>;
+    /**
+     * Opcional. Quando presente, embaixadores e convidados vem daqui, e nao da
+     * aba de vendas — que pode nao ter essa coluna.
+     */
+    ambassadors?: SourceConfig<ColumnMapAmbassadors>;
   };
   ticketTypes: TicketTypeConfig[];
   eventLines: EventLine[];
@@ -122,6 +134,16 @@ export interface BuyerRow {
   valor: number | null;
 }
 
+/** Uma linha de convite de embaixador. */
+export interface AmbassadorRow {
+  linha: number;
+  date: string | null;
+  rawEvent: string;
+  editionId: string | null;
+  lineId: string | null;
+  ambassador: string;
+}
+
 /** Uma linha de trafego ja normalizada. */
 export interface TrafficRow {
   date: string | null;
@@ -135,6 +157,8 @@ export interface DataSet {
   leads: LeadRow[];
   buyers: BuyerRow[];
   traffic: TrafficRow[];
+  /** Convites de embaixador, da aba dedicada ou deduzidos da aba de vendas. */
+  ambassadors: AmbassadorRow[];
   fetchedAt: string;
   warnings: string[];
   /** Falhas de leitura: o painel nao conseguiu abrir a aba. Impedem os numeros de existirem. */

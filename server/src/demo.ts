@@ -5,7 +5,7 @@
  * ser aberto, revisado e aprovado antes de ligar nas planilhas de verdade.
  * Sao numeros inventados e o painel deixa isso explicito na tela.
  */
-import type { AppConfig, BuyerRow, DataSet, LeadRow, TrafficRow } from '../../shared/types.js';
+import type { AmbassadorRow, AppConfig, BuyerRow, DataSet, LeadRow, TrafficRow } from '../../shared/types.js';
 
 /** Gerador deterministico: os numeros de exemplo nao mudam a cada recarga. */
 function makeRandom(seed: number): () => number {
@@ -83,10 +83,23 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
     }
   }
 
+  // No modo demonstracao os convites saem das proprias linhas de venda.
+  const ambassadors: AmbassadorRow[] = buyers
+    .filter((row) => row.ambassador.trim() !== '')
+    .map((row) => ({
+      linha: row.linha,
+      date: row.date,
+      rawEvent: row.rawEvent,
+      editionId: row.editionId,
+      lineId: row.lineId,
+      ambassador: row.ambassador,
+    }));
+
   return {
     leads,
     buyers,
     traffic,
+    ambassadors,
     fetchedAt: new Date().toISOString(),
     falhas: [],
     warnings: [

@@ -16,13 +16,32 @@ const compra = (date, ticketKind, ambassador = '', edition = 'dai-atual') => ({
   ticketKind, rawTicketType: ticketKind ?? '', ambassador, valor: null,
 });
 
+/**
+ * Os convites vem de data.ambassadors. Na producao isso sai de uma aba
+ * dedicada; nos testes, deriva das proprias linhas de venda que tem embaixador.
+ */
+const derivarEmbaixadores = (buyers) =>
+  buyers
+    .filter((row) => row.ambassador && row.ambassador.trim() !== '')
+    .map((row) => ({
+      linha: row.linha,
+      date: row.date,
+      rawEvent: row.rawEvent,
+      editionId: row.editionId,
+      lineId: row.lineId,
+      ambassador: row.ambassador,
+    }));
+
+/** Dataset com os convites derivados das vendas, do jeito que o loader faria. */
+const comConvites = (ds) => ({ ...ds, ambassadors: derivarEmbaixadores(ds.buyers) });
+
 /** Configuracao que calcula pelo preco de tabela, como era antes da troca de fonte. */
 const configPrecoDeTabela = { ...config, usarValorDaPlanilha: false };
 const gasto = (date, cost, edition = 'dai-atual') => ({
   date, campaign: '[DAI] teste', editionId: edition, lineId: 'dai', cost,
 });
 
-const dataset = {
+let dataset = {
   leads: [lead('2026-09-01'), lead('2026-09-01'), lead('2026-09-02'), lead('2026-08-01')],
   buyers: [
     compra('2026-09-01', 'individual'),
@@ -37,7 +56,10 @@ const dataset = {
   traffic: [gasto('2026-09-01', 1000), gasto('2026-09-02', 500.5), gasto('2026-08-01', 9999)],
   fetchedAt: new Date().toISOString(),
   warnings: [],
+  falhas: [],
+  ambassadors: [],
 };
+dataset.ambassadors = derivarEmbaixadores(dataset.buyers);
 
 const filtro = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-03', campanhas: [] };
 
@@ -62,13 +84,13 @@ test('retorno negativo aparece como prejuizo', () => {
 });
 
 test('conta embaixadores distintos e convidados por linha', () => {
-  const { metrics } = computeMetrics(config, dataset, filtro);
+  const { metrics } = computeMetrics(config, comConvites(dataset), filtro);
   // Maria aparece 2x e Joao 1x -> 2 embaixadores, 3 convidados
   assert.deepEqual(metrics.embaixador, { embaixadores: 2, convidados: 3, total: 5 });
 });
 
 test('participantes somam as cadeiras de cada ingresso mais embaixadores e convidados', () => {
-  const { metrics } = computeMetrics(config, dataset, filtro);
+  const { metrics } = computeMetrics(config, comConvites(dataset), filtro);
   // 2 individuais + 1 duplo (2) + 1 triplo (3) + 2 embaixadores + 3 convidados
   assert.equal(metrics.participantes, 12);
 });
@@ -304,6 +326,7 @@ const datasetCampanhas = {
   fetchedAt: new Date().toISOString(),
   warnings: [],
   falhas: [],
+  ambassadors: [],
 };
 
 test('sem campanha selecionada, o custo soma todas as campanhas do evento', () => {
@@ -449,7 +472,7 @@ test('convite de embaixador sem o nome do embaixador e apontado, com as linhas',
   const comNome = compra('2026-09-01', 'cortesia', 'Ana Paula');
   const { metrics, warnings } = computeMetrics(
     config,
-    { ...dataset, buyers: [...dataset.buyers, semNome, comNome] },
+    comConvites({ ...dataset, buyers: [...dataset.buyers, semNome, comNome] }),
     filtro,
   );
   const aviso = warnings.find((w) => w.includes('sem o nome do embaixador'));

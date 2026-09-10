@@ -12,14 +12,14 @@
       }
     },
     "buyers": {
-      "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
-      "tab": "COPIA COMPRADORES PRESENCIAL",
+      "spreadsheetId": "1KNrlzQwoqT1tW4O2JDeo6fn9SH0t2M2CoTWRO546Y5o",
+      "tab": "VENDAS TOTAL LOW TICKET (IFT + IFTS)",
       "headerRow": 1,
       "columns": {
-        "date": "auto:DATA DA VENDA",
-        "event": "auto:EVENTO",
-        "ticketType": "auto:TIPO DE INGRESSO",
-        "ambassador": "auto:EMBAIXADOR",
+        "date": "auto:Data de pagamento",
+        "event": "auto:Produto",
+        "ticketType": "auto:Oferta",
+        "ambassador": "",
         "valor": ""
       }
     },
@@ -31,6 +31,16 @@
         "date": "A",
         "campaign": "D",
         "cost": "F"
+      }
+    },
+    "ambassadors": {
+      "spreadsheetId": "1KNrlzQwoqT1tW4O2JDeo6fn9SH0t2M2CoTWRO546Y5o",
+      "tab": "LISTA DE PARTICIPANTES PRESENCIAL",
+      "headerRow": 1,
+      "columns": {
+        "date": "auto:DATA DA VENDA",
+        "event": "auto:EVENTO",
+        "ambassador": "auto:EMBAIXADOR"
       }
     }
   },
