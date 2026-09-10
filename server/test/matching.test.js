@@ -385,8 +385,46 @@ test('cada evento tem uma unica entrada por edicao no menu', () => {
   // O ANIMA Day e o Dinamicas de Alto Impacto apareciam duas vezes cada um no
   // seletor de evento ("Edicao #01" e o nome do evento), como se fossem coisas
   // diferentes. Sao a mesma edicao.
-  const rotulos = (lineId) =>
-    config.eventLines.find((l) => l.id === lineId).editions.map((e) => e.label);
-  assert.deepEqual(rotulos('anima'), ['#01 — ANIMA Day']);
-  assert.deepEqual(rotulos('dai'), ['#01 — Dinâmicas de Alto Impacto']);
+  const edicoes = (lineId) =>
+    config.eventLines.find((l) => l.id === lineId).editions.map((e) => e.id);
+  assert.deepEqual(edicoes('anima'), ['anima-ed-01']);
+  assert.deepEqual(edicoes('dai'), ['dai-ed-01']);
+});
+
+/**
+ * O que o seletor "Nome do Evento" mostra tem que ser o texto EXATO da coluna
+ * Produto da aba de vendas — sem abreviar, encurtar nem padronizar. Foi um
+ * pedido explicito da IFT, e a razao e pratica: quem confere o painel contra a
+ * planilha precisa achar a mesma linha nos dois lugares. Um rotulo "melhorado"
+ * ("Edicao #02") obriga a pessoa a adivinhar a que produto ele corresponde.
+ *
+ * O teste compara o rotulo com o proprio apelido, entao mexer no nome do
+ * produto sem mexer no rotulo (ou vice-versa) quebra aqui, em vez de virar um
+ * nome errado calado na tela.
+ */
+test('o rotulo da edicao e o nome literal do produto', () => {
+  const deProduto = [
+    'dai-ed-01', 'anima-ed-01',
+    'fp-ed-01', 'fp-ed-02', 'fp-ed-03', 'fp-ed-04', 'fp-ed-05',
+    'ds-ed-01', 'ds-ed-02', 'ds-ed-03', 'ds-ed-04',
+  ];
+  const porId = new Map(
+    config.eventLines.flatMap((l) => l.editions).map((e) => [e.id, e]),
+  );
+  for (const id of deProduto) {
+    const ed = porId.get(id);
+    assert.ok(ed, `edicao sumiu da configuracao: ${id}`);
+    assert.equal(ed.label, ed.aliases[0], `o rotulo de ${id} nao e o nome do produto`);
+  }
+});
+
+test('so as edicoes sem produto proprio tem rotulo descritivo', () => {
+  // Estas tres nao existem na coluna Produto: sao baldes de leads e de trafego,
+  // onde a planilha usa nomes que nao sao nome de produto nenhum. Nao ha texto
+  // literal para exibir, entao o rotulo explica o que elas sao.
+  const semProduto = config.eventLines
+    .flatMap((l) => l.editions)
+    .filter((e) => e.label !== (typeof e.aliases[0] === 'string' ? e.aliases[0] : null))
+    .map((e) => e.id);
+  assert.deepEqual(semProduto.sort(), ['ds-nomes-antigos', 'dt-ambiguo', 'fp-nomes-antigos']);
 });

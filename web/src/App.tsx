@@ -188,8 +188,10 @@ export function App() {
                   <optgroup key={item.id} label={item.label}>
                     <option value={`linha:${item.id}`}>{item.label} — todas as edições</option>
                     {item.editions.map((ed) => (
+                      // Sem recuo manual: o rotulo e o nome do produto como ele
+                      // esta na planilha, e nada pode ser acrescentado a ele.
                       <option key={ed.id} value={`ed:${ed.id}`}>
-                        {'\u00A0\u00A0'}{ed.label}
+                        {ed.label}
                       </option>
                     ))}
                   </optgroup>

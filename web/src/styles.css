@@ -133,6 +133,13 @@ body {
   padding: 9px 11px; border-radius: var(--raio-controle); font: inherit; font-size: 14px;
   min-width: 172px;
 }
+/*
+ * O seletor de evento mostra o nome do produto como ele esta na planilha, e
+ * esses nomes passam de 70 caracteres. Sem o teto, o campo cresce ate o tamanho
+ * do maior nome e empurra os filtros de data para fora da linha. A lista aberta
+ * continua mostrando o nome inteiro.
+ */
+#linha { max-width: min(420px, 100%); }
 .campo select:focus, .campo input:focus,
 .multi-botao:focus-visible, .botao:focus-visible {
   outline: 2px solid var(--acento-fraco); outline-offset: 1px;
