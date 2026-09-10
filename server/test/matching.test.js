@@ -223,8 +223,8 @@ test('os produtos da aba de vendas caem no evento certo', () => {
     ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'formacao-palestrantes'],
     ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes'],
     ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'formacao-palestrantes'],
-    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima'],
-    ['Day Training - Dinâmicas Sistêmicas', 'anima'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'dinamicas-sistemicas'],
+    ['Day Training - Dinâmicas Sistêmicas', 'dinamicas-sistemicas'],
     ['#01  ÂNIMA Day Training', 'anima'],
     ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor', 'dai'],
   ];
@@ -260,15 +260,15 @@ test('cada edicao numerada cai na sua propria edicao, sem roubar as vizinhas', (
   const casos = [
     ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata', 'dai-ed-01'],
     ['#01  ÂNIMA Day Training', 'anima-ed-01'],
-    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima-ed-02'],
-    ['#03 Day Training - Dinâmicas Sistêmicas', 'anima-ed-03'],
-    ['#04 Day Training - Dinâmicas Sistêmicas', 'anima-ed-04'],
-    ['Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'ds-ed-02'],
+    ['#03 Day Training - Dinâmicas Sistêmicas', 'ds-ed-03'],
+    ['#04 Day Training - Dinâmicas Sistêmicas', 'ds-ed-04'],
+    ['Day Training - Dinâmicas Sistêmicas', 'ds-ed-01'],
     ['#02 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'fp-ed-02'],
     ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-03'],
     ['#04 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-04'],
     ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-05'],
-    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'fp-sem-numero'],
+    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'fp-ed-01'],
   ];
   for (const [produto, esperado] of casos) {
     const r = matchEdition(matcher, produto);
@@ -280,7 +280,7 @@ test('cada edicao numerada cai na sua propria edicao, sem roubar as vizinhas', (
 test('as tres linhas de evento continuam separadas', () => {
   const linhaDe = (produto) => matchEdition(matcher, produto)?.lineId;
   assert.equal(linhaDe('#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata'), 'dai');
-  assert.equal(linhaDe('#02 Day Training - Dinâmicas Sistêmicas'), 'anima');
+  assert.equal(linhaDe('#02 Day Training - Dinâmicas Sistêmicas'), 'dinamicas-sistemicas');
   assert.equal(linhaDe('#01  ÂNIMA Day Training'), 'anima');
   assert.equal(linhaDe('#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata'), 'formacao-palestrantes');
 });
