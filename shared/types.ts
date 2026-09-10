@@ -145,6 +145,18 @@ export interface AppConfig {
      */
     ambassadors?: SourceConfig<ColumnMapAmbassadors>;
   };
+  /**
+   * Tags de campanha que pertencem a outros produtos da empresa, sem colchetes
+   * (ex.: "DI" para as campanhas "[DI] [VENDAS] ..." das Dinamicas Infinitas,
+   * um produto digital).
+   *
+   * A planilha de trafego e o plano de midia da empresa inteira, nao so dos
+   * eventos presenciais. Sem esta lista, o gasto desses produtos aparece como
+   * "custo de campanha sem evento" — um alerta de R$ 74 mil que na verdade e
+   * so o resto da empresa. Alerta que e quase todo ruido para de ser lido, e
+   * ai o problema de verdade passa junto.
+   */
+  campanhasIgnoradas?: string[];
   ticketTypes: TicketTypeConfig[];
   eventLines: EventLine[];
 }
@@ -234,6 +246,15 @@ export interface Metrics {
   faturamentoLiquido: number;
   retorno: number;
   leadsTotal: number;
+  /**
+   * Verdadeiro quando este evento nao tem NENHUM lead na planilha, em periodo
+   * nenhum — nao e "deu zero no mes", e "nao existe fonte de lead para ele".
+   *
+   * Sao coisas muito diferentes e um "0" sozinho nao distingue as duas. Foi a
+   * causa de duas investigacoes de bug que nao eram bug: o numero estava certo
+   * e a tela e que nao dizia o porque.
+   */
+  leadsSemFonte: boolean;
   participantes: number;
   custoPorLead: number | null;
   /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */

@@ -7,7 +7,7 @@ import type {
   LeadRow,
   TrafficRow,
 } from '../../shared/types.js';
-import { normalizeText, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
+import { extractTags, normalizeText, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
 import { compileMatcher, matchEdition, matchTicketKind } from './matching.js';
 import { hasCredentials, readTab } from './sheets.js';
 import { buildDemoDataSet } from './demo.js';
@@ -119,6 +119,11 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
   const trafficCampaignCol = resolveColumnIndex(config.sources.traffic.columns.campaign, trafficHeader);
   const trafficCostCol = resolveColumnIndex(config.sources.traffic.columns.cost, trafficHeader);
 
+  // Campanhas de outros produtos da empresa: a planilha de trafego e o plano de
+  // midia inteiro, e o gasto delas so aparecia como "custo sem evento".
+  const tagsIgnoradas = new Set((config.campanhasIgnoradas ?? []).map((tag) => normalizeText(tag)));
+  let campanhasIgnoradas = 0;
+
   const traffic: TrafficRow[] = [];
   for (let i = trafficHeaderIndex + 1; i < trafficRaw.length; i += 1) {
     const row = trafficRaw[i];
@@ -128,6 +133,10 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     // Sem data valida na coluna A a linha nao pertence a tabela diaria (rodape,
     // bloco de totais, area de anotacao). Descartar evita somar lixo no custo.
     if (!date || !campaign) continue;
+    if (tagsIgnoradas.size > 0 && extractTags(campaign).some((tag) => tagsIgnoradas.has(tag))) {
+      campanhasIgnoradas += 1;
+      continue;
+    }
     const match = matchEdition(matcher, campaign, date);
     traffic.push({
       date,
@@ -140,6 +149,9 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
 
   if (linhasIgnoradas > 0) {
     console.log(`[loader] ${linhasIgnoradas} linha(s) ignoradas por produtosIgnorados`);
+  }
+  if (campanhasIgnoradas > 0) {
+    console.log(`[loader] ${campanhasIgnoradas} linha(s) de trafego ignoradas por campanhasIgnoradas`);
   }
 
   // --- Embaixadores ---

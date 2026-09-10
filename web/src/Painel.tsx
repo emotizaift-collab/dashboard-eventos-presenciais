@@ -55,12 +55,22 @@ export function Painel({ dados }: Props) {
       <section className="metricas">
         <Metrica rotulo="Faturamento líquido" valor={dinheiro(m.faturamentoLiquido)} />
         <Metrica rotulo="Custo de campanha" valor={dinheiro(m.custoCampanha)} />
-        <Metrica rotulo="Leads" valor={numero(m.leadsTotal)} />
+        <Metrica
+          rotulo="Leads"
+          valor={m.leadsSemFonte ? '—' : numero(m.leadsTotal)}
+          nota={m.leadsSemFonte ? 'Este evento não aparece na planilha de leads' : undefined}
+        />
         <Metrica rotulo="Participantes" valor={numero(m.participantes)} />
         <Metrica
           rotulo="Custo por lead"
           valor={m.custoPorLead === null ? '—' : dinheiro(m.custoPorLead)}
-          nota={m.custoPorLead === null ? 'Sem leads no período' : undefined}
+          nota={
+            m.custoPorLead === null
+              ? m.leadsSemFonte
+                ? 'Não há como calcular sem fonte de leads'
+                : 'Sem leads no período'
+              : undefined
+          }
         />
       </section>
 

@@ -525,3 +525,34 @@ test('sem usarValorDaPlanilha, o calculo por preco de tabela continua valendo', 
   const { metrics } = computeMetrics(configPrecoDeTabela, dados, filtro);
   assert.equal(metrics.faturamentoLiquido, 297, 'ignora o valor da planilha quando a opcao esta desligada');
 });
+
+/**
+ * "0 leads neste mes" e "este evento nao tem fonte de leads" sao coisas
+ * diferentes, e um "0" sozinho na tela nao distingue as duas. Isso ja gerou
+ * duas investigacoes de bug que nao eram bug — o numero estava certo, a tela e
+ * que nao dizia o porque. leadsSemFonte e o que a tela usa para trocar o zero
+ * mudo por um traco com explicacao.
+ */
+test('leadsSemFonte separa "zero no periodo" de "sem fonte nenhuma"', () => {
+  const base = { buyers: [], traffic: [], ambassadors: [], fetchedAt: '', warnings: [], falhas: [] };
+  const filtroDai = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-30', campanhas: [] };
+
+  // Evento com leads, mas nenhum dentro do periodo escolhido: zero de verdade.
+  const comLeadsForaDoPeriodo = computeMetrics(
+    config, { ...base, leads: [lead('2026-05-10')] }, filtroDai,
+  ).metrics;
+  assert.equal(comLeadsForaDoPeriodo.leadsTotal, 0);
+  assert.equal(comLeadsForaDoPeriodo.leadsSemFonte, false, 'ha leads, so nao neste mes');
+
+  // Evento sem nenhum lead em periodo nenhum: nao ha o que contar.
+  const semNenhumLead = computeMetrics(config, { ...base, leads: [] }, filtroDai).metrics;
+  assert.equal(semNenhumLead.leadsTotal, 0);
+  assert.equal(semNenhumLead.leadsSemFonte, true);
+
+  // E quando ha lead no periodo, obviamente ha fonte.
+  const comLeads = computeMetrics(
+    config, { ...base, leads: [lead('2026-09-05')] }, filtroDai,
+  ).metrics;
+  assert.equal(comLeads.leadsTotal, 1);
+  assert.equal(comLeads.leadsSemFonte, false);
+});

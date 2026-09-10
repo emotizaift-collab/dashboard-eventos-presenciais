@@ -387,5 +387,8 @@
     "PALESTRANTE DE ALTO IMPACTO",
     "PALESTRANTE DE ALTO IMPACTO [VITALICIO]",
     "PALESTRANTE DE ALTO IMPACTO - 147"
+  ],
+  "campanhasIgnoradas": [
+    "DI"
   ]
 }

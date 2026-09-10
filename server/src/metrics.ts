@@ -237,6 +237,11 @@ export function computeMetrics(
   );
   const retorno = round2(faturamentoLiquido - custoCampanha);
   const leadsTotal = leads.length;
+  // Mesmo recorte de evento, sem o recorte de data: e o que separa "deu zero
+  // neste mes" de "este evento nao aparece na planilha de leads".
+  const leadsSemFonte = !data.leads.some(
+    (row) => matchesFilter(filter, row.lineId, row.editionId) && noEscopoDasCampanhas(row.lineId),
+  );
   const cadeirasVendidas = ingressos.reduce((total, item) => total + item.participantes, 0);
   const participantes = cadeirasVendidas + embaixadores + convidados;
   const custoPorLead = leadsTotal > 0 ? round2(custoCampanha / leadsTotal) : null;
@@ -247,6 +252,7 @@ export function computeMetrics(
       faturamentoLiquido,
       retorno,
       leadsTotal,
+      leadsSemFonte,
       participantes,
       custoPorLead,
       ingressos,

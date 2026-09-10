@@ -85,3 +85,11 @@ test('data invalida no apelido e recusada, dizendo qual apelido', () => {
 test('apelido sem nome e descartado, em vez de virar apelido vazio', () => {
   assert.deepEqual(validateConfig(comApelido({ nome: '   ' })).eventLines[0].editions[0].aliases, []);
 });
+
+test('a lista de campanhas ignoradas sobrevive a validacao', () => {
+  // "DI" sao as campanhas das Dinamicas Infinitas, produto digital confirmado
+  // pela IFT. Sem esta lista, os R$ 40 mil delas apareciam como "custo de
+  // campanha sem evento" — um alerta que era quase todo ruido.
+  const config = validateConfig(base());
+  assert.deepEqual(config.campanhasIgnoradas, ['DI']);
+});
