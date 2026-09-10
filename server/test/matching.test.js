@@ -213,3 +213,41 @@ test('as grafias reais da planilha da IFT sao todas classificadas certo', () => 
     assert.equal(matchTicketKind(matcher, texto), esperado, `errou em: ${texto}`);
   }
 });
+
+test('os produtos da aba de vendas caem no evento certo', () => {
+  // Duas familias de produto comecam com "Day Training". O apelido curto
+  // sozinho puxava as duas para o ANIMA Day — foi assim que 217 vendas do
+  // "Formacao de Palestrantes" foram parar no evento errado.
+  const casos = [
+    ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
+    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
+    ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
+    ['Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
+    ['#01  ÂNIMA Day Training', 'anima-historico'],
+    ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor', 'dai-atual'],
+  ];
+  for (const [produto, esperado] of casos) {
+    const r = matchEdition(matcher, produto);
+    assert.ok(r, `nao reconheceu: ${produto}`);
+    assert.equal(r.editionId, esperado, `evento errado para: ${produto}`);
+  }
+});
+
+test('os produtos digitais da aba de vendas ficam de fora', () => {
+  // Estes tres estao em produtosIgnorados e sao descartados antes do
+  // casamento; os outros simplesmente nao casam com nenhum apelido.
+  const config = JSON.parse(fs.readFileSync(new URL('../../config/event-config.default.json', import.meta.url), 'utf8'));
+  for (const nome of ['PALESTRANTE DE ALTO IMPACTO', 'PALESTRANTE DE ALTO IMPACTO [VITALICIO]', 'PALESTRANTE DE ALTO IMPACTO - 147']) {
+    assert.ok(config.produtosIgnorados.includes(nome), `${nome} precisa estar na lista de descarte`);
+  }
+  for (const nome of [
+    'Dinâmicas Sistêmicas INFINITAS – O Treinamento',
+    'COMO VENDER TREINAMENTOS PARA EMPRESAS',
+    'IA para criar Palestras Transformadoras',
+    'Bianca IA - fonte sistêmica',
+    'Protocolo de Atendimento Sistêmico',
+  ]) {
+    assert.equal(matchEdition(matcher, nome), null, `${nome} nao pode virar evento`);
+  }
+});

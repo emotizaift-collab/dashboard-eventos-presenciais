@@ -234,11 +234,28 @@
           ]
         }
       ]
+    },
+    {
+      "id": "formacao-palestrantes",
+      "label": "Day Training — Formação de Palestrantes",
+      "editions": [
+        {
+          "id": "formacao-palestrantes-atual",
+          "label": "Day Training — Formação de Palestrantes",
+          "current": true,
+          "aliases": [
+            "DAY TRAINING – FORMAÇÃO DE PALESTRANTES",
+            "FORMAÇÃO DE PALESTRANTES",
+            "FORMACAO DE PALESTRANTES"
+          ]
+        }
+      ]
     }
   ],
   "usarValorDaPlanilha": false,
   "produtosIgnorados": [
     "PALESTRANTE DE ALTO IMPACTO",
-    "PALESTRANTE DE ALTO IMPACTO [VITALICIO]"
+    "PALESTRANTE DE ALTO IMPACTO [VITALICIO]",
+    "PALESTRANTE DE ALTO IMPACTO - 147"
   ]
 }
