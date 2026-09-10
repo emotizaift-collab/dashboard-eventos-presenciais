@@ -28,8 +28,15 @@ async function pedir<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   estado: () => pedir<EstadoApp>('/api/state'),
-  metricas: (params: { line: string; from: string; to: string; campanhas: string[] }) => {
+  metricas: (params: {
+    line: string;
+    edition?: string;
+    from: string;
+    to: string;
+    campanhas: string[];
+  }) => {
     const busca = new URLSearchParams({ line: params.line, from: params.from, to: params.to });
+    if (params.edition) busca.set('edition', params.edition);
     // Nome de campanha tem virgula, colchete e espaco: um parametro por campanha
     // evita ter de inventar um separador que nao exista nos nomes.
     for (const campanha of params.campanhas) busca.append('campanha', campanha);

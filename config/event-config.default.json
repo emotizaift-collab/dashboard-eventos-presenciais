@@ -193,6 +193,14 @@
           ]
         },
         {
+          "id": "dai-ed-01",
+          "label": "Edição #01",
+          "current": false,
+          "aliases": [
+            "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata"
+          ]
+        },
+        {
           "id": "dai-historico",
           "label": "Palestrante de Alto Impacto (histórico)",
           "current": false,
@@ -223,12 +231,44 @@
           ]
         },
         {
-          "id": "anima-historico",
-          "label": "Day Training (histórico)",
+          "id": "anima-ed-01",
+          "label": "Edição #01",
           "current": false,
           "aliases": [
+            "#01  ÂNIMA Day Training"
+          ]
+        },
+        {
+          "id": "anima-ed-02",
+          "label": "Edição #02",
+          "current": false,
+          "aliases": [
+            "#02 Day Training - Dinâmicas Sistêmicas"
+          ]
+        },
+        {
+          "id": "anima-ed-03",
+          "label": "Edição #03",
+          "current": false,
+          "aliases": [
+            "#03 Day Training - Dinâmicas Sistêmicas"
+          ]
+        },
+        {
+          "id": "anima-ed-04",
+          "label": "Edição #04",
+          "current": false,
+          "aliases": [
+            "#04 Day Training - Dinâmicas Sistêmicas"
+          ]
+        },
+        {
+          "id": "anima-historico",
+          "label": "Day Training (sem edição)",
+          "current": false,
+          "aliases": [
+            "Day Training - Dinâmicas Sistêmicas",
             "Day Training Sist",
-            "Day Training",
             "DAYTRAINING",
             "DAY TRAININ"
           ]
@@ -240,13 +280,44 @@
       "label": "Day Training — Formação de Palestrantes",
       "editions": [
         {
-          "id": "formacao-palestrantes-atual",
-          "label": "Day Training — Formação de Palestrantes",
+          "id": "fp-ed-02",
+          "label": "Edição #02",
+          "current": false,
+          "aliases": [
+            "#02 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru"
+          ]
+        },
+        {
+          "id": "fp-ed-03",
+          "label": "Edição #03",
+          "current": false,
+          "aliases": [
+            "#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata"
+          ]
+        },
+        {
+          "id": "fp-ed-04",
+          "label": "Edição #04",
+          "current": false,
+          "aliases": [
+            "#04 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata"
+          ]
+        },
+        {
+          "id": "fp-ed-05",
+          "label": "Edição #05",
           "current": true,
           "aliases": [
-            "DAY TRAINING – FORMAÇÃO DE PALESTRANTES",
-            "FORMAÇÃO DE PALESTRANTES",
-            "FORMACAO DE PALESTRANTES"
+            "#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata"
+          ]
+        },
+        {
+          "id": "fp-sem-numero",
+          "label": "Sem edição identificada",
+          "current": false,
+          "aliases": [
+            "🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru",
+            "FORMAÇÃO DE PALESTRANTES"
           ]
         }
       ]

@@ -15,7 +15,11 @@ export function App() {
   const [erro, setErro] = useState<string | null>(null);
   const [atualizando, setAtualizando] = useState(false);
 
-  const [linha, setLinha] = useState('');
+  // O valor do seletor e "linha:<id>" para o evento inteiro, ou "ed:<id>" para
+  // uma edicao especifica. Guardar os dois juntos evita estado inconsistente.
+  const [selecao, setSelecao] = useState('');
+  const linha = selecao.startsWith('ed:') ? '' : selecao.replace(/^linha:/, '');
+  const edicao = selecao.startsWith('ed:') ? selecao.slice(3) : '';
   const [de, setDe] = useState(diasAtras(29));
   const [ate, setAte] = useState(hoje());
   const [campanhas, setCampanhas] = useState<CampanhaResumo[]>([]);
@@ -30,7 +34,7 @@ export function App() {
         const [estadoInicial, configInicial] = await Promise.all([api.estado(), api.config()]);
         setEstado(estadoInicial);
         setConfig(configInicial);
-        setLinha((atual) => atual || estadoInicial.eventLines[0]?.id || 'todos');
+        setSelecao((atual) => atual || `linha:${estadoInicial.eventLines[0]?.id ?? 'todos'}`);
       } catch (falha) {
         setErro(falha instanceof Error ? falha.message : String(falha));
       }
@@ -38,10 +42,17 @@ export function App() {
   }, []);
 
   const buscarMetricas = useCallback(async () => {
-    if (!linha) return;
+    if (!linha && !edicao) return;
     const marca = ++buscaAtual.current;
     try {
-      const resposta = await api.metricas({ line: linha, from: de, to: ate, campanhas: campanhasSel });
+      const resposta = await api.metricas({
+        // Ao escolher uma edicao, a linha vira "todos": quem manda e a edicao.
+        line: edicao ? 'todos' : linha,
+        edition: edicao || undefined,
+        from: de,
+        to: ate,
+        campanhas: campanhasSel,
+      });
       if (marca !== buscaAtual.current) return;
       setDados(resposta);
       setErro(null);
@@ -49,7 +60,7 @@ export function App() {
       if (marca !== buscaAtual.current) return;
       setErro(falha instanceof Error ? falha.message : String(falha));
     }
-  }, [linha, de, ate, campanhasSel]);
+  }, [linha, edicao, de, ate, campanhasSel]);
 
   useEffect(() => {
     void buscarMetricas();
@@ -171,15 +182,18 @@ export function App() {
           <div className="filtros">
             <div className="campo">
               <label htmlFor="linha">Nome do Evento</label>
-              <select
-                id="linha"
-                value={linha}
-                onChange={(e) => setLinha(e.target.value)}
-              >
+              <select id="linha" value={selecao} onChange={(e) => setSelecao(e.target.value)}>
+                <option value="linha:todos">Todos os eventos</option>
                 {estado.eventLines.map((item) => (
-                  <option key={item.id} value={item.id}>{item.label}</option>
+                  <optgroup key={item.id} label={item.label}>
+                    <option value={`linha:${item.id}`}>{item.label} — todas as edições</option>
+                    {item.editions.map((ed) => (
+                      <option key={ed.id} value={`ed:${ed.id}`}>
+                        {'\u00A0\u00A0'}{ed.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
-                <option value="todos">Todos os eventos</option>
               </select>
             </div>
 

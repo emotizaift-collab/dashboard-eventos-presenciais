@@ -218,19 +218,20 @@ test('os produtos da aba de vendas caem no evento certo', () => {
   // Duas familias de produto comecam com "Day Training". O apelido curto
   // sozinho puxava as duas para o ANIMA Day — foi assim que 217 vendas do
   // "Formacao de Palestrantes" foram parar no evento errado.
+  // Aqui interessa a LINHA de evento; a edicao exata tem teste proprio.
   const casos = [
-    ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
-    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
-    ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes-atual'],
-    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
-    ['Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
-    ['#01  ÂNIMA Day Training', 'anima-historico'],
-    ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor', 'dai-atual'],
+    ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'formacao-palestrantes'],
+    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'formacao-palestrantes'],
+    ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'formacao-palestrantes'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima'],
+    ['Day Training - Dinâmicas Sistêmicas', 'anima'],
+    ['#01  ÂNIMA Day Training', 'anima'],
+    ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor', 'dai'],
   ];
   for (const [produto, esperado] of casos) {
     const r = matchEdition(matcher, produto);
     assert.ok(r, `nao reconheceu: ${produto}`);
-    assert.equal(r.editionId, esperado, `evento errado para: ${produto}`);
+    assert.equal(r.lineId, esperado, `evento errado para: ${produto}`);
   }
 });
 
@@ -250,4 +251,36 @@ test('os produtos digitais da aba de vendas ficam de fora', () => {
   ]) {
     assert.equal(matchEdition(matcher, nome), null, `${nome} nao pode virar evento`);
   }
+});
+
+test('cada edicao numerada cai na sua propria edicao, sem roubar as vizinhas', () => {
+  // Os apelidos sao o nome EXATO como aparece na coluna Produto. Igualdade
+  // exata vence casamento parcial, entao "#02" nunca cai no "#03" nem no
+  // generico sem numero.
+  const casos = [
+    ['#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata', 'dai-ed-01'],
+    ['#01  ÂNIMA Day Training', 'anima-ed-01'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'anima-ed-02'],
+    ['#03 Day Training - Dinâmicas Sistêmicas', 'anima-ed-03'],
+    ['#04 Day Training - Dinâmicas Sistêmicas', 'anima-ed-04'],
+    ['Day Training - Dinâmicas Sistêmicas', 'anima-historico'],
+    ['#02 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'fp-ed-02'],
+    ['#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-03'],
+    ['#04 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-04'],
+    ['#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata', 'fp-ed-05'],
+    ['🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru', 'fp-sem-numero'],
+  ];
+  for (const [produto, esperado] of casos) {
+    const r = matchEdition(matcher, produto);
+    assert.ok(r, `nao reconheceu: ${produto}`);
+    assert.equal(r.editionId, esperado, `edicao errada para: ${produto}`);
+  }
+});
+
+test('as tres linhas de evento continuam separadas', () => {
+  const linhaDe = (produto) => matchEdition(matcher, produto)?.lineId;
+  assert.equal(linhaDe('#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata'), 'dai');
+  assert.equal(linhaDe('#02 Day Training - Dinâmicas Sistêmicas'), 'anima');
+  assert.equal(linhaDe('#01  ÂNIMA Day Training'), 'anima');
+  assert.equal(linhaDe('#03 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata'), 'formacao-palestrantes');
 });
