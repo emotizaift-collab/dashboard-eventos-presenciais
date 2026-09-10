@@ -406,5 +406,72 @@
     "MI",
     "[IFT] [LEADS] [ABO] [F] 28-02 SP",
     "[ANIMA] [LEADS] [CBO] - 07/07"
-  ]
+  ],
+  "highTicket": {
+    "sources": {
+      "vendas": {
+        "spreadsheetId": "1KNrlzQwoqT1tW4O2JDeo6fn9SH0t2M2CoTWRO546Y5o",
+        "tab": "VENDAS TOTAL IFT",
+        "headerRow": 1,
+        "columns": {
+          "data": "auto:Data da venda",
+          "dataLead": "auto:Data do Lead",
+          "dataCall": "auto:Data da Call",
+          "cliente": "auto:Cliente",
+          "funil": "auto:Funil",
+          "sdr": "auto:SDR",
+          "mentor": "auto:MENTOR",
+          "produto": "auto:Produto",
+          "empresa": "auto:EMPRESA",
+          "formaDePagamento": "auto:Forma de Pagamento",
+          "entrada": "auto:Entrada",
+          "total": "auto:Total"
+        }
+      },
+      "leads": {
+        "spreadsheetId": "1ZfYGvQU4NsKrVMSLdHrAe9UJFtyUpNaC22qBQlrScbg",
+        "tab": "Base 1",
+        "headerRow": 1,
+        "columns": {
+          "data": "auto:Data",
+          "empresa": "auto:EMPRESA."
+        }
+      },
+      "trafego": {
+        "spreadsheetId": "1e1Uf7GyBiP1pMCBJGl12PldPYQSsQtuFGqmaCIHcw48",
+        "tab": "BASE",
+        "headerRow": 1,
+        "columns": {
+          "data": "auto:Date",
+          "campanha": "auto:Campaign Name",
+          "custo": "auto:VALOR C IMPOSTO"
+        }
+      }
+    },
+    "paineis": [
+      {
+        "id": "ift",
+        "label": "IFT",
+        "empresa": [
+          "IFT"
+        ],
+        "tagsDeCampanha": [
+          "[IFT]"
+        ]
+      },
+      {
+        "id": "sistemico",
+        "label": "Sistêmico",
+        "empresa": [
+          "IFTS",
+          "SYSTEMIC",
+          "SISTEMIC"
+        ],
+        "tagsDeCampanha": [
+          "[SISTEMIC ACADEMY]",
+          "[SYSTEMIC ACADEMY]"
+        ]
+      }
+    ]
+  }
 }

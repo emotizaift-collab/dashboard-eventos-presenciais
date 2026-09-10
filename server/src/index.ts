@@ -7,6 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { store } from './store.js';
 import { ROOT } from './config.js';
 import { computeMetrics, listDays, periodoDeVendas } from './metrics.js';
+import { computeHighTicket } from './highticket.js';
 import { lookupTab, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
 import { hasCredentials, listTabs, readHeader, readTab, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types.js';
@@ -99,6 +100,22 @@ app.get('/api/metrics', (req, res) => {
  * Lista as campanhas de trafego para alimentar o filtro.
  * Ordenadas por custo, que e a ordem util para quem procura onde o dinheiro foi.
  */
+app.get('/api/high-ticket', (req, res) => {
+  const config = store.getConfig();
+  if (!config.highTicket) {
+    res.status(404).json({ erro: 'A secao High Ticket nao esta configurada.' });
+    return;
+  }
+  const hoje = new Date().toISOString().slice(0, 10);
+  const from = normalizeDateParam(req.query.from, defaultFrom());
+  const to = normalizeDateParam(req.query.to, hoje);
+  if (listDays(from, to).length === 0) {
+    res.status(400).json({ erro: 'Intervalo de datas invalido: a data inicial precisa vir antes da final.' });
+    return;
+  }
+  res.json(computeHighTicket(config, store.getHighTicket(), { from, to }));
+});
+
 app.get('/api/campanhas', (req, res) => {
   const data = store.getData();
   if (!data) {

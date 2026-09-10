@@ -1,14 +1,23 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types';
+import type { AppConfig, CampanhaResumo, MetricsResponse, RespostaHighTicket } from '../../shared/types';
 import { api, conectarAoVivo, type EstadoApp } from './api';
 import { FiltroCampanhas } from './FiltroCampanhas';
 import { Painel } from './Painel';
+import { HighTicket } from './HighTicket';
 import { Configuracao } from './Configuracao';
 import { Sidebar } from './Sidebar';
 import { dataBr, diasAtras, hoje, horaBr, inicioDoMes } from './format';
 
+/** Titulo do topo por secao. Fora daqui, o menu ja e a fonte dos rotulos. */
+const TITULO_DA_SECAO: Record<string, string> = {
+  'eventos-presenciais': 'Eventos Presenciais',
+  'high-ticket': 'High Ticket',
+  configuracao: 'Configuração',
+};
+
 export function App() {
   const [secao, setSecao] = useState('eventos-presenciais');
+  const [htDados, setHtDados] = useState<RespostaHighTicket | null>(null);
   const [estado, setEstado] = useState<EstadoApp | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [dados, setDados] = useState<MetricsResponse | null>(null);
@@ -74,6 +83,24 @@ export function App() {
   useEffect(() => {
     void buscarMetricas();
   }, [buscarMetricas]);
+
+  // O High Ticket le so quando a secao esta aberta: sao tres abas grandes e nao
+  // ha por que buscar de novo enquanto ninguem esta olhando para elas.
+  useEffect(() => {
+    if (secao !== 'high-ticket') return;
+    let cancelado = false;
+    api
+      .highTicket({ from: de, to: ate })
+      .then((resposta) => {
+        if (!cancelado) setHtDados(resposta);
+      })
+      .catch((falha) => {
+        if (!cancelado) setErro(falha instanceof Error ? falha.message : String(falha));
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [secao, de, ate, estado?.versao]);
 
   // A lista do filtro segue o periodo: campanha que nao rodou no intervalo nao
   // precisa poluir a busca.
@@ -143,11 +170,13 @@ export function App() {
 
       <main className="conteudo">
       <header className="pagina-topo">
-        <h1>{naSecao('configuracao') ? 'Configuração' : 'Eventos Presenciais'}</h1>
+        <h1>{TITULO_DA_SECAO[secao] ?? 'Eventos Presenciais'}</h1>
         <p>
           {naSecao('configuracao')
             ? 'Nomes dos eventos, tipos de ingresso e de onde os dados são lidos.'
-            : `Ingresso individual: ${estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+            : naSecao('high-ticket')
+              ? 'IFT e Sistêmico lado a lado, no período selecionado.'
+              : `Ingresso individual: ${estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
         </p>
       </header>
 
@@ -273,6 +302,47 @@ export function App() {
           <p className="rodape">
             Período selecionado: {dataBr(de)} até {dataBr(ate)}.<br />
             O painel se atualiza sozinho assim que uma planilha é editada — não precisa recarregar a página.
+          </p>
+        </>
+      )}
+
+      {naSecao('high-ticket') && (
+        <>
+          <div className="filtros">
+            <div className="campo">
+              <label htmlFor="ht-de">Data inicial</label>
+              <input id="ht-de" type="date" value={de} max={ate} onChange={(e) => setDe(e.target.value)} />
+            </div>
+            <div className="campo">
+              <label htmlFor="ht-ate">Data final</label>
+              <input id="ht-ate" type="date" value={ate} min={de} onChange={(e) => setAte(e.target.value)} />
+            </div>
+            <div className="campo">
+              <label>Atalhos</label>
+              <div className="atalhos">
+                <button onClick={() => { setDe(hoje()); setAte(hoje()); }}>Hoje</button>
+                <button onClick={() => { setDe(diasAtras(6)); setAte(hoje()); }}>7 dias</button>
+                <button onClick={() => { setDe(diasAtras(29)); setAte(hoje()); }}>30 dias</button>
+                <button onClick={() => { setDe(inicioDoMes()); setAte(hoje()); }}>Este mês</button>
+                <button onClick={() => { setDe('2024-01-01'); setAte(hoje()); }}>Tudo</button>
+              </div>
+            </div>
+            <div className="campo">
+              <label>&nbsp;</label>
+              <button className="botao" onClick={atualizarAgora} disabled={atualizando}>
+                {atualizando ? 'Atualizando...' : 'Atualizar agora'}
+              </button>
+            </div>
+          </div>
+
+          {htDados ? (
+            <HighTicket dados={htDados} />
+          ) : (
+            <div className="carregando">Lendo as planilhas do High Ticket...</div>
+          )}
+
+          <p className="rodape">
+            Período selecionado: {dataBr(de)} até {dataBr(ate)}.
           </p>
         </>
       )}

@@ -23,7 +23,10 @@ export interface GrupoDeMenu {
 export const MENU: GrupoDeMenu[] = [
   {
     titulo: 'Módulos',
-    itens: [{ id: 'eventos-presenciais', label: 'Eventos Presenciais' }],
+    itens: [
+      { id: 'eventos-presenciais', label: 'Eventos Presenciais' },
+      { id: 'high-ticket', label: 'High Ticket' },
+    ],
   },
   {
     titulo: 'Ajustes',

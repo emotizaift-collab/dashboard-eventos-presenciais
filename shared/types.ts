@@ -201,6 +201,8 @@ export interface AppConfig {
   campanhasIgnoradas?: string[];
   ticketTypes: TicketTypeConfig[];
   eventLines: EventLine[];
+  /** A secao High Ticket. Ausente quando o painel roda so com os eventos. */
+  highTicket?: HighTicketConfig;
 }
 
 /** Uma linha de lead ja normalizada. */
@@ -360,4 +362,155 @@ export interface MetricsResponse {
   falhas: string[];
   /** Verdadeiro quando o painel ainda roda sem a chave do Google (dados de exemplo). */
   demo: boolean;
+}
+
+/* ===================== High Ticket ===================== */
+
+/**
+ * Um dos dois paineis da tela High Ticket. E configuracao, e nao codigo, porque
+ * a empresa ja tem duas marcas e pode ter uma terceira: um painel novo entra
+ * acrescentando um item aqui.
+ *
+ * `empresa` lista TODOS os textos que identificam esta marca, porque cada
+ * planilha escreve de um jeito: a aba de vendas usa "IFTS" e a de leads usa
+ * "SYSTEMIC" para a mesma marca. Comparacao normalizada (sem acento, sem caixa).
+ *
+ * `tagsDeCampanha` sao trechos procurados dentro do nome da campanha, como
+ * "[SISTEMIC ACADEMY]" — mesma logica de correlacao ja usada nos eventos.
+ */
+export interface PainelHighTicket {
+  id: string;
+  label: string;
+  empresa: string[];
+  tagsDeCampanha: string[];
+}
+
+export interface ColunasVendasHighTicket {
+  data: string;
+  dataLead: string;
+  dataCall: string;
+  cliente: string;
+  funil: string;
+  sdr: string;
+  mentor: string;
+  produto: string;
+  empresa: string;
+  formaDePagamento: string;
+  entrada: string;
+  total: string;
+}
+export interface ColunasLeadsHighTicket {
+  data: string;
+  empresa: string;
+}
+export interface ColunasTrafegoHighTicket {
+  data: string;
+  campanha: string;
+  custo: string;
+}
+
+export interface HighTicketConfig {
+  sources: {
+    vendas: SourceConfig<ColunasVendasHighTicket>;
+    leads: SourceConfig<ColunasLeadsHighTicket>;
+    trafego: SourceConfig<ColunasTrafegoHighTicket>;
+  };
+  paineis: PainelHighTicket[];
+}
+
+/** Uma venda high ticket ja normalizada. */
+export interface VendaHighTicket {
+  linha: number;
+  data: string | null;
+  dataLead: string | null;
+  dataCall: string | null;
+  cliente: string;
+  funil: string;
+  sdr: string;
+  mentor: string;
+  produto: string;
+  formaDePagamento: string;
+  entrada: number;
+  total: number;
+  /** Id do painel a que a venda pertence, ou null quando a EMPRESA nao e de nenhum. */
+  painelId: string | null;
+  rawEmpresa: string;
+}
+
+export interface LeadHighTicket {
+  data: string | null;
+  painelId: string | null;
+  rawEmpresa: string;
+}
+
+export interface GastoHighTicket {
+  data: string | null;
+  campanha: string;
+  painelId: string | null;
+  custo: number;
+}
+
+export interface DadosHighTicket {
+  vendas: VendaHighTicket[];
+  leads: LeadHighTicket[];
+  trafego: GastoHighTicket[];
+  fetchedAt: string;
+  falhas: string[];
+}
+
+/** Uma linha de tabela agrupada (por funil, por vendedor ou por produto). */
+export interface GrupoHighTicket {
+  chave: string;
+  vendas: number;
+  entrada: number;
+  total: number;
+}
+
+export interface PontoHighTicket {
+  data: string;
+  faturamento: number;
+  vendas: number;
+}
+
+/** Uma linha da tabela de clientes, na ordem pedida pela IFT. */
+export interface ClienteHighTicket {
+  data: string | null;
+  dataLead: string | null;
+  dataCall: string | null;
+  cliente: string;
+  funil: string;
+  formaDePagamento: string;
+  sdr: string;
+  mentor: string;
+  produto: string;
+  total: number;
+}
+
+export interface MetricasHighTicket {
+  painelId: string;
+  label: string;
+  investimento: number;
+  leads: number;
+  custoPorLead: number | null;
+  faturamento: number;
+  emCaixa: number;
+  vendas: number;
+  porFunil: GrupoHighTicket[];
+  porVendedor: GrupoHighTicket[];
+  porProduto: GrupoHighTicket[];
+  serie: PontoHighTicket[];
+  clientes: ClienteHighTicket[];
+}
+
+export interface RespostaHighTicket {
+  paineis: MetricasHighTicket[];
+  filtro: { from: string; to: string };
+  fetchedAt: string | null;
+  falhas: string[];
+  /** Linhas cuja EMPRESA nao pertence a painel nenhum. Nunca somem caladas. */
+  naoClassificado: {
+    vendas: ValorNaoClassificado[];
+    leads: ValorNaoClassificado[];
+    custoSemPainel: number;
+  };
 }

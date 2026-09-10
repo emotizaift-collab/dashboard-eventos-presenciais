@@ -6,9 +6,10 @@
  *  - quando o Apps Script avisa que a planilha mudou (webhook);
  *  - de tempos em tempos, como rede de seguranca caso um aviso se perca.
  */
-import type { AppConfig, DataSet } from '../../shared/types.js';
+import type { AppConfig, DadosHighTicket, DataSet } from '../../shared/types.js';
 import { loadConfig, saveConfig, resetConfig } from './config.js';
 import { fetchDataSet } from './loader.js';
+import { fetchHighTicket } from './highticket.js';
 
 type Listener = (version: number) => void;
 
@@ -17,6 +18,7 @@ const REFRESH_INTERVAL_MS = Number(process.env.REFRESH_INTERVAL_MS ?? 5 * 60 * 1
 class Store {
   private config: AppConfig = loadConfig();
   private data: DataSet | null = null;
+  private highTicket: DadosHighTicket | null = null;
   private version = 0;
   private listeners = new Set<Listener>();
   private pending: Promise<void> | null = null;
@@ -29,6 +31,10 @@ class Store {
 
   getData(): DataSet | null {
     return this.data;
+  }
+
+  getHighTicket(): DadosHighTicket | null {
+    return this.highTicket;
   }
 
   getVersion(): number {
@@ -67,8 +73,18 @@ class Store {
 
   private async doRefresh(motivo: string): Promise<void> {
     try {
-      const data = await fetchDataSet(this.config);
+      // As duas leituras sao independentes e vao juntas: uma so volta ao
+      // servidor por ciclo, e uma falha no High Ticket nao pode derrubar o
+      // painel de eventos (por isso o catch proprio).
+      const [data, highTicket] = await Promise.all([
+        fetchDataSet(this.config),
+        fetchHighTicket(this.config).catch((erro) => {
+          console.error('[store] falha ao ler o High Ticket:', erro);
+          return null;
+        }),
+      ]);
       this.data = data;
+      this.highTicket = highTicket;
       this.lastError = null;
       this.version += 1;
       console.log(

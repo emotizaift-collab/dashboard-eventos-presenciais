@@ -1,4 +1,4 @@
-import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types';
+import type { AppConfig, CampanhaResumo, MetricsResponse, RespostaHighTicket } from '../../shared/types';
 
 export interface EstadoApp {
   demo: boolean;
@@ -34,6 +34,8 @@ async function pedir<T>(url: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   estado: () => pedir<EstadoApp>('/api/state'),
+  highTicket: (p: { from: string; to: string }) =>
+    pedir<RespostaHighTicket>(`/api/high-ticket?from=${p.from}&to=${p.to}`),
   metricas: (params: {
     line: string;
     edition?: string;
