@@ -7,7 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { store } from './store.js';
 import { ROOT } from './config.js';
 import { computeMetrics, listDays } from './metrics.js';
-import { lookupTab, resolveColumnIndex } from './normalize.js';
+import { lookupTab, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
 import { hasCredentials, listTabs, readHeader, readTab, serviceAccountEmail } from './sheets.js';
 import type { AppConfig, CampanhaResumo, MetricsResponse } from '../../shared/types.js';
 
@@ -188,19 +188,50 @@ app.get('/api/diagnostics', async (req, res) => {
           res.status(404).json({ erro: `coluna "${colunaAvulsa}" nao encontrada`, cabecalho });
           return;
         }
-        const contagem = new Map<string, number>();
-        for (let i = 1; i < linhas.length; i += 1) {
-          const valor = (linhas[i]?.[indice] ?? '').toString().trim();
-          if (!valor) continue;
-          contagem.set(valor, (contagem.get(valor) ?? 0) + 1);
+        // Recorte opcional por data, e soma opcional de uma coluna de dinheiro:
+        // e o que permite conferir "nesta data, este produto vendeu tanto".
+        const dataFiltro = typeof req.query.data === 'string' ? parseDate(req.query.data.trim()) : null;
+        const colunaData = typeof req.query.colunaData === 'string' ? req.query.colunaData.trim() : 'Data';
+        const colunaSoma = typeof req.query.somar === 'string' ? req.query.somar.trim() : '';
+        const iData = dataFiltro ? resolveColumnIndex(`auto:${colunaData}`, cabecalho) : -1;
+        const iSoma = colunaSoma ? resolveColumnIndex(`auto:${colunaSoma}`, cabecalho) : -1;
+        if (dataFiltro && iData < 0) {
+          res.status(404).json({ erro: `coluna de data "${colunaData}" nao encontrada`, cabecalho });
+          return;
         }
+        if (colunaSoma && iSoma < 0) {
+          res.status(404).json({ erro: `coluna "${colunaSoma}" nao encontrada`, cabecalho });
+          return;
+        }
+
+        const contagem = new Map<string, { linhas: number; soma: number }>();
+        let consideradas = 0;
+        for (let i = 1; i < linhas.length; i += 1) {
+          const linha = linhas[i];
+          if (!linha) continue;
+          if (dataFiltro && parseDate((linha[iData] ?? '').toString()) !== dataFiltro) continue;
+          consideradas += 1;
+          const valor = (linha[indice] ?? '').toString().trim();
+          if (!valor) continue;
+          const atual = contagem.get(valor) ?? { linhas: 0, soma: 0 };
+          atual.linhas += 1;
+          if (iSoma >= 0) atual.soma += parseMoney((linha[iSoma] ?? '').toString());
+          contagem.set(valor, atual);
+        }
+
         res.json({
           spreadsheetId: idAvulso,
           aba: abaAvulsa,
           coluna: cabecalho[indice],
-          totalDeLinhas: Math.max(0, linhas.length - 1),
+          filtroDeData: dataFiltro,
+          colunaSomada: iSoma >= 0 ? cabecalho[iSoma] : null,
+          totalDeLinhasNaAba: Math.max(0, linhas.length - 1),
+          linhasNoRecorte: consideradas,
+          somaTotal: iSoma >= 0
+            ? Math.round([...contagem.values()].reduce((t, v) => t + v.soma, 0) * 100) / 100
+            : null,
           valores: [...contagem.entries()]
-            .map(([valor, linhas2]) => ({ valor, linhas: linhas2 }))
+            .map(([valor, v]) => ({ valor, linhas: v.linhas, soma: Math.round(v.soma * 100) / 100 }))
             .sort((a, b) => b.linhas - a.linhas)
             .slice(0, 80),
         });
