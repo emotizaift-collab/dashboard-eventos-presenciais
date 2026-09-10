@@ -202,16 +202,10 @@
         },
         {
           "id": "dai-historico",
-          "label": "Palestrante de Alto Impacto (histórico)",
+          "label": "Dinâmicas ao Vivo (nomes antigos)",
           "current": false,
           "aliases": [
-            "PAI",
-            "PAIAOVIVO",
-            "PAI AO VIVO",
-            "PAI 147$",
             "DINAMICASAOVIVO",
-            "Palestrante de Alto Impacto",
-            "Palestrante ao Vivo",
             "Dinâmicas ao Vivo"
           ]
         }
@@ -292,6 +286,19 @@
           "current": true,
           "aliases": [
             "#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata"
+          ]
+        },
+        {
+          "id": "fp-nomes-antigos",
+          "label": "Palestrante de Alto Impacto (leads e tráfego)",
+          "current": false,
+          "aliases": [
+            "PAI",
+            "PAIAOVIVO",
+            "PAI AO VIVO",
+            "PAI 147$",
+            "Palestrante de Alto Impacto",
+            "Palestrante ao Vivo"
           ]
         }
       ]

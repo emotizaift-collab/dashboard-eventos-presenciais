@@ -15,13 +15,17 @@ const casos = [
   ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-atual'],
   ['Dinâmicas de Alto Impacto', 'dai', 'dai-atual'],
   ['DAI', 'dai', 'dai-atual'],
-  // Evento A — nomes historicos
-  ['[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP', 'dai', 'dai-historico'],
-  ['[PAI] [VENDAS] [INLEAD] [CBO] [F] BR [VID] - 25/08/25 BID CAP', 'dai', 'dai-historico'],
-  ['[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA', 'dai', 'dai-historico'],
-  ['[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26', 'dai', 'dai-historico'],
+  // PAI = Palestrante de Alto Impacto = o evento "Formacao de Palestrantes",
+  // confirmado pela IFT. Sao os nomes que a planilha de leads e as tags do
+  // trafego usam; a aba de vendas chama o mesmo evento de "DAY TRAINING –
+  // FORMACAO DE PALESTRANTES".
+  ['[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  ['[PAI] [VENDAS] [INLEAD] [CBO] [F] BR [VID] - 25/08/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  ['[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  ['[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  ['Palestrante de Alto Impacto', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  // "Dinamicas ao Vivo" fala de Dinamicas, nao de Palestrante: fica no DAI.
   ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dai', 'dai-historico'],
-  ['Palestrante de Alto Impacto', 'dai', 'dai-historico'],
   // Evento B — nome novo
   ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-atual'],
   ['ANIMA Day', 'anima', 'anima-atual'],
@@ -91,7 +95,7 @@ test('apelidos escritos com espaco tambem sao reconhecidos', () => {
   // Valores reais encontrados nas planilhas de leads e de compradores.
   const pai = matchEdition(matcher, 'PAI AO VIVO');
   assert.ok(pai, '"PAI AO VIVO" precisa ser reconhecido');
-  assert.equal(pai.editionId, 'dai-historico');
+  assert.equal(pai.editionId, 'fp-nomes-antigos');
 
   const day = matchEdition(matcher, 'DAY TRAININ');
   assert.ok(day, '"DAY TRAININ" (digitado incompleto na planilha) precisa ser reconhecido');
