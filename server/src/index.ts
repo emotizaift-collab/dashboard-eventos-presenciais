@@ -155,9 +155,41 @@ app.post('/api/config/reset', async (_req, res) => {
   }
 });
 
-/** Diagnostico: confere a chave e lista as abas reais de cada planilha. */
-app.get('/api/diagnostics', async (_req, res) => {
+/**
+ * Diagnostico: confere a chave e lista as abas reais de cada planilha.
+ *
+ * Com ?spreadsheetId=... inspeciona QUALQUER planilha, e nao so as
+ * configuradas — serve para avaliar uma fonte candidata (abas e nomes de
+ * coluna) antes de trocar a origem dos dados do painel.
+ */
+app.get('/api/diagnostics', async (req, res) => {
   const config = store.getConfig();
+
+  const idAvulso = typeof req.query.spreadsheetId === 'string' ? req.query.spreadsheetId.trim() : '';
+  if (idAvulso) {
+    if (!hasCredentials()) {
+      res.status(400).json({ erro: 'sem a chave do Google nao da para inspecionar uma planilha' });
+      return;
+    }
+    try {
+      const abas = await listTabs(idAvulso);
+      const colunasPorAba: Record<string, string[] | string> = {};
+      for (const aba of abas) {
+        try {
+          colunasPorAba[aba] = await readHeader(idAvulso, aba);
+        } catch (error) {
+          colunasPorAba[aba] = `erro: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+      res.json({ spreadsheetId: idAvulso, abas, colunasPorAba });
+    } catch (error) {
+      res.status(502).json({
+        spreadsheetId: idAvulso,
+        erro: error instanceof Error ? error.message : String(error),
+      });
+    }
+    return;
+  }
   const resultado: Record<string, unknown> = {
     chaveConfigurada: hasCredentials(),
     contaDeServico: serviceAccountEmail(),
