@@ -10,20 +10,21 @@ import { compileMatcher, matchEdition, matchTicketKind } from '../../dist/server
 const config = JSON.parse(fs.readFileSync(new URL('../../config/event-config.default.json', import.meta.url), 'utf8'));
 const matcher = compileMatcher(config);
 
+// O 4o item e a data da linha, obrigatoria nos apelidos que tem vigencia.
 const casos = [
   // Evento A — nome novo
   ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-ed-01'],
   ['Dinâmicas de Alto Impacto', 'dai', 'dai-ed-01'],
   ['DAI', 'dai', 'dai-ed-01'],
-  // PAI = Palestrante de Alto Impacto = o evento "Formacao de Palestrantes",
-  // confirmado pela IFT. Sao os nomes que a planilha de leads e as tags do
-  // trafego usam; a aba de vendas chama o mesmo evento de "DAY TRAINING –
-  // FORMACAO DE PALESTRANTES".
-  ['[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos'],
-  ['[PAI] [VENDAS] [INLEAD] [CBO] [F] BR [VID] - 25/08/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos'],
-  ['[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA', 'formacao-palestrantes', 'fp-nomes-antigos'],
-  ['[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26', 'formacao-palestrantes', 'fp-nomes-antigos'],
-  ['Palestrante de Alto Impacto', 'formacao-palestrantes', 'fp-nomes-antigos'],
+  // PAI = Palestrante de Alto Impacto. Ate 02/09/2026 essa identidade era do
+  // evento "Formacao de Palestrantes" (a aba de vendas chama o mesmo evento de
+  // "DAY TRAINING – FORMACAO DE PALESTRANTES"); de 04/09/2026 em diante ela
+  // passou a ser do Dinamicas de Alto Impacto.
+  ['[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos', '2025-09-24'],
+  ['[PAI] [VENDAS] [INLEAD] [CBO] [F] BR [VID] - 25/08/25 BID CAP', 'formacao-palestrantes', 'fp-nomes-antigos', '2025-08-25'],
+  ['[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA', 'formacao-palestrantes', 'fp-nomes-antigos', '2026-08-07'],
+  ['[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26', 'formacao-palestrantes', 'fp-nomes-antigos', '2026-07-04'],
+  ['Palestrante de Alto Impacto', 'formacao-palestrantes', 'fp-nomes-antigos', '2026-01-10'],
   // "Dinamicas ao Vivo" e o nome antigo do Dinamicas Sistemicas, confirmado
   // pela IFT — nao do Dinamicas de Alto Impacto, como dizia a especificacao.
   ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
@@ -35,8 +36,8 @@ const casos = [
 ];
 
 test('reconhece as campanhas e os nomes dos dois eventos', () => {
-  for (const [texto, linhaEsperada, edicaoEsperada] of casos) {
-    const resultado = matchEdition(matcher, texto);
+  for (const [texto, linhaEsperada, edicaoEsperada, data] of casos) {
+    const resultado = matchEdition(matcher, texto, data);
     assert.ok(resultado, `nao reconheceu: ${texto}`);
     assert.equal(resultado.lineId, linhaEsperada, `linha errada para: ${texto}`);
     assert.equal(resultado.editionId, edicaoEsperada, `edicao errada para: ${texto}`);
@@ -389,7 +390,9 @@ test('cada evento tem uma unica entrada por edicao no menu', () => {
   const edicoes = (lineId) =>
     config.eventLines.find((l) => l.id === lineId).editions.map((e) => e.id);
   assert.deepEqual(edicoes('anima'), ['anima-ed-01']);
-  assert.deepEqual(edicoes('dai'), ['dai-ed-01']);
+  // O 'dai-nomes-pai' nao e outra edicao do evento: e o balde dos nomes que a
+  // aba de leads e o trafego usam, que nao existem na coluna Produto.
+  assert.deepEqual(edicoes('dai'), ['dai-ed-01', 'dai-nomes-pai']);
 });
 
 /**
@@ -427,7 +430,7 @@ test('so as edicoes sem produto proprio tem rotulo descritivo', () => {
     .flatMap((l) => l.editions)
     .filter((e) => e.label !== (typeof e.aliases[0] === 'string' ? e.aliases[0] : null))
     .map((e) => e.id);
-  assert.deepEqual(semProduto.sort(), ['ds-nomes-antigos', 'dt-ambiguo', 'fp-nomes-antigos']);
+  assert.deepEqual(semProduto.sort(), ['dai-nomes-pai', 'ds-nomes-antigos', 'dt-ambiguo', 'fp-nomes-antigos']);
 });
 
 
@@ -454,22 +457,45 @@ test('"PAI AO VIVO" muda de evento em 04/09/2026', () => {
   assert.equal(dono('2027-01-05')?.lineId, 'dai');
 });
 
-test('a virada do "PAI AO VIVO" nao mexe nas campanhas de trafego', () => {
-  // A IFT falou so do texto da aba de leads. O trafego usa tags proprias e ja
-  // tem campanha separada do DAI desde 04/09, entao mexer nelas seria invencao
-  // minha — e moveria mais de cem mil reais de custo de um evento para outro
-  // sem ninguem ter pedido.
-  const depois = '2026-09-10';
+/**
+ * A IFT confirmou que as campanhas de trafego viraram junto com os leads: toda
+ * a identidade "PAI" passou para o Dinamicas de Alto Impacto em 04/09/2026.
+ *
+ * O nome da campanha carrega a data em que ela foi criada ("- 24/09/25"), mas
+ * quem manda e a DATA DA LINHA: a planilha de trafego tem uma linha por
+ * campanha por dia, entao uma campanha que rodasse dos dois lados da virada
+ * teria o gasto dividido dia a dia entre os dois eventos. E o comportamento
+ * certo, porque o custo e diario.
+ */
+test('as campanhas PAI tambem viram DAI em 04/09/2026', () => {
   const campanhas = [
     '[PAIAOVIVO] [LEADS] [ABO] [F] 07-08 ALPHA',
     '[PAI] [VENDAS] [PAGINA] [CBO] [F] BR [VID] - 24/09/25 BID CAP',
     '[PAI 147$] [VENDAS] [ABO] [F] BR - 04/07/26',
   ];
   for (const campanha of campanhas) {
-    assert.equal(matchEdition(matcher, campanha, depois)?.lineId, 'formacao-palestrantes', campanha);
+    assert.equal(
+      matchEdition(matcher, campanha, '2026-08-20')?.lineId,
+      'formacao-palestrantes',
+      `antes da virada: ${campanha}`,
+    );
+    assert.equal(
+      matchEdition(matcher, campanha, '2026-09-10')?.lineId,
+      'dai',
+      `depois da virada: ${campanha}`,
+    );
   }
-  assert.equal(
-    matchEdition(matcher, '[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', depois)?.lineId,
-    'dai',
-  );
+});
+
+test('os nomes proprios do Formacao de Palestrantes nao se movem', () => {
+  // So a identidade "PAI" mudou de dono. Os nomes de produto continuam onde
+  // estao — sem isso, R\$ 24 mil de faturamento trocariam de evento sozinhos.
+  const depois = '2026-09-10';
+  const produtos = [
+    '🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru',
+    '#05 🎤 DAY TRAINING – FORMAÇÃO DE PALESTRANTES com Professor Massaru Ogata',
+  ];
+  for (const produto of produtos) {
+    assert.equal(matchEdition(matcher, produto, depois)?.lineId, 'formacao-palestrantes', produto);
+  }
 });
