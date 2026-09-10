@@ -6,7 +6,7 @@ import type {
   LeadRow,
   TrafficRow,
 } from '../../shared/types.js';
-import { parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
+import { normalizeText, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
 import { compileMatcher, matchEdition, matchTicketKind } from './matching.js';
 import { hasCredentials, readTab } from './sheets.js';
 import { buildDemoDataSet } from './demo.js';
@@ -63,7 +63,22 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
   const buyersDateCol = resolveColumnIndex(config.sources.buyers.columns.date, buyersHeader);
   const buyersEventCol = resolveColumnIndex(config.sources.buyers.columns.event, buyersHeader);
   const buyersTypeCol = resolveColumnIndex(config.sources.buyers.columns.ticketType, buyersHeader);
-  const buyersAmbCol = resolveColumnIndex(config.sources.buyers.columns.ambassador, buyersHeader);
+  const buyersAmbCol = config.sources.buyers.columns.ambassador
+    ? resolveColumnIndex(config.sources.buyers.columns.ambassador, buyersHeader)
+    : -1;
+  const buyersValorCol = config.sources.buyers.columns.valor
+    ? resolveColumnIndex(config.sources.buyers.columns.valor, buyersHeader)
+    : -1;
+  if (config.sources.buyers.columns.valor && buyersValorCol < 0 && buyersRaw.length > 0) {
+    warnings.push(
+      `Nao encontrei a coluna de valor ("${config.sources.buyers.columns.valor}") na aba de compradores. ` +
+        'O faturamento esta sendo calculado pelo preco de tabela.',
+    );
+  }
+
+  // Produtos que compartilham nome com um evento mas nao sao venda de ingresso.
+  const ignorados = new Set((config.produtosIgnorados ?? []).map((nome) => normalizeText(nome)));
+  let linhasIgnoradas = 0;
 
   const buyers: BuyerRow[] = [];
   for (let i = buyersHeaderIndex + 1; i < buyersRaw.length; i += 1) {
@@ -73,9 +88,14 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     const rawTicketType = cell(row, buyersTypeCol);
     const ambassador = cell(row, buyersAmbCol);
     if (!rawEvent && !rawTicketType && !ambassador) continue;
+    if (ignorados.has(normalizeText(rawEvent))) {
+      linhasIgnoradas += 1;
+      continue;
+    }
     const match = matchEdition(matcher, rawEvent);
     buyers.push({
       linha: i + 1,
+      valor: buyersValorCol >= 0 ? parseMoney(cell(row, buyersValorCol)) : null,
       date: parseDate(cell(row, buyersDateCol)),
       rawEvent,
       editionId: match?.editionId ?? null,
@@ -110,6 +130,10 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
       lineId: match?.lineId ?? null,
       cost: parseMoney(cell(row, trafficCostCol)),
     });
+  }
+
+  if (linhasIgnoradas > 0) {
+    console.log(`[loader] ${linhasIgnoradas} linha(s) ignoradas por produtosIgnorados`);
   }
 
   return { leads, buyers, traffic, fetchedAt: new Date().toISOString(), warnings, falhas };

@@ -132,23 +132,46 @@ export function computeMetrics(
   // Uma contagem por tipo configurado. A lista de tipos e editavel pela
   // interface, entao nada aqui pode depender de um id especifico existir.
   const contagem = new Map<string, number>();
+  const somaPorTipo = new Map<string, number>();
+  const tiposPorId = new Map(config.ticketTypes.map((tipo) => [tipo.id, tipo]));
+  // Preferir o valor registrado na planilha preserva o historico: o VIP custava
+  // R$ 91,16 antes do reajuste, e recalcular tudo pelo preco de hoje reescreveria
+  // vendas antigas. Linha sem valor cai no preco de tabela.
+  const usarValor = config.usarValorDaPlanilha === true;
+  let linhasSemValor = 0;
+
   for (const row of buyers) {
     if (row.ticketKind === null) continue;
     contagem.set(row.ticketKind, (contagem.get(row.ticketKind) ?? 0) + 1);
+
+    const tipo = tiposPorId.get(row.ticketKind);
+    if (!tipo || !tipo.contaComoVenda) continue;
+    let valorDaLinha: number;
+    if (usarValor && typeof row.valor === 'number' && Number.isFinite(row.valor)) {
+      valorDaLinha = row.valor;
+    } else {
+      valorDaLinha = precoDoTipo(tipo, price);
+      if (usarValor) linhasSemValor += 1;
+    }
+    somaPorTipo.set(row.ticketKind, (somaPorTipo.get(row.ticketKind) ?? 0) + valorDaLinha);
+  }
+
+  if (linhasSemValor > 0) {
+    warnings.push(
+      `${linhasSemValor} venda(s) estao sem valor preenchido na planilha, entao entraram pelo preco de ` +
+        'tabela do tipo de ingresso. Confira essas linhas se o faturamento parecer diferente do esperado.',
+    );
   }
 
   const ingressos = config.ticketTypes
     .filter((tipo) => tipo.contaComoVenda)
-    .map((tipo) => {
-      const quantidade = contagem.get(tipo.id) ?? 0;
-      return {
-        id: tipo.id,
-        label: tipo.label,
-        quantidade,
-        faturamento: round2(quantidade * precoDoTipo(tipo, price)),
-        participantes: quantidade * tipo.cadeiras,
-      };
-    });
+    .map((tipo) => ({
+      id: tipo.id,
+      label: tipo.label,
+      quantidade: contagem.get(tipo.id) ?? 0,
+      faturamento: round2(somaPorTipo.get(tipo.id) ?? 0),
+      participantes: (contagem.get(tipo.id) ?? 0) * tipo.cadeiras,
+    }));
 
   const comEmbaixador = buyers.filter((row) => row.ambassador.trim() !== '');
   const convidados = comEmbaixador.length;

@@ -13,8 +13,11 @@ let proximaLinha = 2;
 const compra = (date, ticketKind, ambassador = '', edition = 'dai-atual') => ({
   linha: proximaLinha++,
   date, rawEvent: 'DAI', editionId: edition, lineId: 'dai',
-  ticketKind, rawTicketType: ticketKind ?? '', ambassador,
+  ticketKind, rawTicketType: ticketKind ?? '', ambassador, valor: null,
 });
+
+/** Configuracao que calcula pelo preco de tabela, como era antes da troca de fonte. */
+const configPrecoDeTabela = { ...config, usarValorDaPlanilha: false };
 const gasto = (date, cost, edition = 'dai-atual') => ({
   date, campaign: '[DAI] teste', editionId: edition, lineId: 'dai', cost,
 });
@@ -39,7 +42,7 @@ const dataset = {
 const filtro = { lineId: 'dai', editionId: null, from: '2026-09-01', to: '2026-09-03', campanhas: [] };
 
 test('calcula faturamento pelo preco do ingresso, sem contar cortesias', () => {
-  const { metrics } = computeMetrics(config, dataset, filtro);
+  const { metrics } = computeMetrics(configPrecoDeTabela, dataset, filtro);
   assert.equal(qtd(metrics, 'individual'), 2);
   assert.equal(qtd(metrics, 'duplo'), 1);
   assert.equal(qtd(metrics, 'triplo'), 1);
@@ -463,4 +466,39 @@ test('acompanhante sem nome de embaixador nao vira alarme falso', () => {
     filtro,
   );
   assert.ok(!warnings.some((w) => w.includes('sem o nome do embaixador')));
+});
+
+// --- Valor vindo da planilha (fonte VENDAS TOTAL LOW TICKET) ---
+
+const configComValor = { ...config, usarValorDaPlanilha: true };
+const compraComValor = (date, ticketKind, valor) => ({ ...compra(date, ticketKind), valor });
+
+test('com valor na planilha, o faturamento e a soma do que esta escrito', () => {
+  const dados = {
+    ...dataset,
+    buyers: [
+      compraComValor('2026-09-01', 'individual', 91.16),
+      compraComValor('2026-09-02', 'vip', 91.16),   // VIP antes do reajuste
+      compraComValor('2026-09-02', 'vip', 297),     // VIP depois do reajuste
+    ],
+  };
+  const { metrics } = computeMetrics(configComValor, dados, filtro);
+  assert.equal(metrics.faturamentoLiquido, 479.32, '91,16 + 91,16 + 297,00');
+  // O preco de tabela do VIP (R$ 297) nao pode reescrever a venda antiga.
+  const vip = metrics.ingressos.find((t) => t.id === 'vip');
+  assert.equal(vip.faturamento, 388.16);
+  assert.equal(vip.quantidade, 2);
+});
+
+test('venda sem valor na planilha cai no preco de tabela, e avisa', () => {
+  const dados = { ...dataset, buyers: [compraComValor('2026-09-01', 'individual', null)] };
+  const { metrics, warnings } = computeMetrics(configComValor, dados, filtro);
+  assert.equal(metrics.faturamentoLiquido, 91.16);
+  assert.ok(warnings.some((w) => w.includes('sem valor preenchido')));
+});
+
+test('sem usarValorDaPlanilha, o calculo por preco de tabela continua valendo', () => {
+  const dados = { ...dataset, buyers: [compraComValor('2026-09-01', 'vip', 91.16)] };
+  const { metrics } = computeMetrics(configPrecoDeTabela, dados, filtro);
+  assert.equal(metrics.faturamentoLiquido, 297, 'ignora o valor da planilha quando a opcao esta desligada');
 });

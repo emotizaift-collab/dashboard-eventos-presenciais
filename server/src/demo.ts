@@ -63,6 +63,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
           ticketKind,
           rawTicketType: ticketKind,
           ambassador: '',
+          valor: null,
         });
       }
 
@@ -76,6 +77,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
           ticketKind: 'cortesia',
           rawTicketType: 'convite embaixador',
           ambassador: nomes[Math.floor(random() * nomes.length)],
+          valor: null,
         });
       }
     }

@@ -39,7 +39,10 @@ export interface ColumnMapBuyers {
   date: string;
   event: string;
   ticketType: string;
+  /** Coluna do embaixador. Vazio quando a aba nao tem essa informacao. */
   ambassador: string;
+  /** Coluna com o valor da venda. Vazio quando o valor deve ser calculado. */
+  valor?: string;
 }
 export interface ColumnMapTraffic {
   date: string;
@@ -69,6 +72,20 @@ export interface EventLine {
 
 export interface AppConfig {
   ticketPrice: number;
+  /**
+   * Quando verdadeiro, o faturamento vem da coluna de valor da planilha e o
+   * preco por tipo de ingresso vira apenas reserva, para linha sem valor.
+   */
+  usarValorDaPlanilha?: boolean;
+  /**
+   * Nomes de produto a ignorar por completo, comparados por igualdade exata.
+   *
+   * Existe por causa de uma colisao real: "PALESTRANTE DE ALTO IMPACTO" e ao
+   * mesmo tempo um produto digital de ~R$ 23 (9.056 vendas) e o nome antigo do
+   * evento presencial. Sem esta lista, as vendas digitais entrariam como
+   * ingresso e inflariam faturamento e participantes.
+   */
+  produtosIgnorados?: string[];
   sources: {
     leads: SourceConfig<ColumnMapLeads>;
     buyers: SourceConfig<ColumnMapBuyers>;
@@ -97,6 +114,12 @@ export interface BuyerRow {
   ticketKind: TicketKind | null;
   rawTicketType: string;
   ambassador: string;
+  /**
+   * Valor lido da planilha, quando a aba tem essa coluna. Preferido ao preco
+   * de tabela porque preserva o historico: o VIP custava R$ 91,16 antes do
+   * reajuste, e recalcular pelo preco de hoje reescreveria o passado.
+   */
+  valor: number | null;
 }
 
 /** Uma linha de trafego ja normalizada. */
