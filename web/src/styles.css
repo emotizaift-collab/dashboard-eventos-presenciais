@@ -402,3 +402,11 @@ code.mono { font-family: inherit; background: var(--superficie); padding: 2px 7p
 .ht-sobra { margin-top: 36px; border-top: 1px solid var(--divisoria); padding-top: 28px; }
 
 .vazio { color: var(--texto-fraco); font-size: 13px; margin: 4px 0 0; }
+
+/* Explica um bloco que veio zerado, para o zero nao parecer defeito. */
+.secao-nota {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--texto-fraco);
+}

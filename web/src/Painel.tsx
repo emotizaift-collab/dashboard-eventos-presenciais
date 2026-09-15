@@ -102,6 +102,7 @@ export function Painel({ dados }: Props) {
             <Item n={m.embaixador.convidados} t="Convidados" />
             <Item n={m.embaixador.total} t="Total" />
           </div>
+          {notaDosConvites(m) && <p className="secao-nota">{notaDosConvites(m)}</p>}
         </section>
       </div>
 
@@ -175,6 +176,23 @@ export function Painel({ dados }: Props) {
       </section>
     </>
   );
+}
+
+/**
+ * Tres zeros em Embaixadores podem significar duas coisas bem diferentes:
+ * ninguem convidou ninguem NESTE periodo, ou este evento nunca teve convite
+ * nenhum. Um "0" sozinho nao distingue as duas — e foi exatamente isso que
+ * levou a IFT a abrir chamado de bug em cima de numero certo: o painel abre no
+ * primeiro evento da lista, que e justamente o que nao tem convite.
+ */
+function notaDosConvites(m: Metrics): string | undefined {
+  const { total, noHistorico } = m.embaixador;
+  if (total > 0) return undefined;
+  if (noHistorico > 0) {
+    const convites = `${numero(noHistorico)} convite${noHistorico === 1 ? '' : 's'}`;
+    return `Nenhum convite no período selecionado. Este evento tem ${convites} em outras datas — amplie o período para vê-los.`;
+  }
+  return 'Este evento ainda não aparece na lista de participantes presenciais.';
 }
 
 /**

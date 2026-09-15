@@ -325,7 +325,18 @@ export interface Metrics {
     faturamento: number;
     participantes: number;
   }>;
-  embaixador: { embaixadores: number; convidados: number; total: number };
+  embaixador: {
+    embaixadores: number;
+    convidados: number;
+    total: number;
+    /**
+     * Quantos convites este evento tem na lista de participantes somando TODOS
+     * os periodos. Serve para a tela separar "nao houve convite neste mes" de
+     * "este evento nunca teve convite" — um "0" sozinho nao distingue as duas,
+     * e ja levou a IFT a abrir chamado de bug em cima de numero certo.
+     */
+    noHistorico: number;
+  };
   serie: DailyPoint[];
   /** Valores que o painel nao conseguiu classificar — ajudam a ajustar o mapeamento. */
   naoClassificado: {

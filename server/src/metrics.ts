@@ -219,6 +219,15 @@ export function computeMetrics(
     comEmbaixador.map((row) => chaveDoEmbaixador(row.ambassador)),
   ).size;
 
+  // Mesmo recorte de evento, sem o recorte de data. E o que permite a tela dizer
+  // "nao houve convite neste periodo" em vez de deixar um zero mudo, que parece
+  // defeito. Mesma ideia ja usada em leadsSemFonte, logo abaixo.
+  const convitesNoHistorico = data.ambassadors.filter(
+    (row) =>
+      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
+      noEscopoDasCampanhas(row.lineId),
+  ).length;
+
   // Cada ingresso que leva mais de uma pessoa gera acompanhante: o duplo pede 1
   // nome, o triplo pede 2. A equipe preenche isso a mao, ligando para o
   // comprador, entao a diferenca aponta quantos telefonemas ainda faltam.
@@ -333,7 +342,12 @@ export function computeMetrics(
       participantes,
       custoPorLead,
       ingressos,
-      embaixador: { embaixadores, convidados, total: embaixadores + convidados },
+      embaixador: {
+        embaixadores,
+        convidados,
+        total: embaixadores + convidados,
+        noHistorico: convitesNoHistorico,
+      },
       serie: buildSeries(config, filter, leads, buyers, traffic),
       naoClassificado: collectUnmatched(data),
     },

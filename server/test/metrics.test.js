@@ -86,7 +86,7 @@ test('retorno negativo aparece como prejuizo', () => {
 test('conta embaixadores distintos e convidados por linha', () => {
   const { metrics } = computeMetrics(config, comConvites(dataset), filtro);
   // Maria aparece 2x e Joao 1x -> 2 embaixadores, 3 convidados
-  assert.deepEqual(metrics.embaixador, { embaixadores: 2, convidados: 3, total: 5 });
+  assert.deepEqual(metrics.embaixador, { embaixadores: 2, convidados: 3, total: 5, noHistorico: 3 });
 });
 
 test('participantes somam as cadeiras de cada ingresso mais embaixadores e convidados', () => {
@@ -746,17 +746,17 @@ const embaixadorDe = (ambassadors, filtro = filtroFp) =>
 
 test('o mesmo nome duas vezes e 1 embaixadora, 2 convidados, 3 pessoas', () => {
   assert.deepEqual(embaixadorDe([convite('Alessandra'), convite('Alessandra')]), {
-    embaixadores: 1, convidados: 2, total: 3,
+    embaixadores: 1, convidados: 2, total: 3, noHistorico: 2,
   });
 });
 
 test('dois embaixadores, um deles com duas linhas, dao 2, 3 e 5', () => {
   const r = embaixadorDe([convite('Alessandra'), convite('João'), convite('Alessandra')]);
-  assert.deepEqual(r, { embaixadores: 2, convidados: 3, total: 5 });
+  assert.deepEqual(r, { embaixadores: 2, convidados: 3, total: 5, noHistorico: 3 });
 });
 
 test('sem nenhum nome preenchido, tudo fica em zero', () => {
-  assert.deepEqual(embaixadorDe([]), { embaixadores: 0, convidados: 0, total: 0 });
+  assert.deepEqual(embaixadorDe([]), { embaixadores: 0, convidados: 0, total: 0, noHistorico: 0 });
 });
 
 test('grafias diferentes do mesmo nome sao a mesma pessoa', () => {
@@ -764,15 +764,15 @@ test('grafias diferentes do mesmo nome sao a mesma pessoa', () => {
   // embaixadora. Sem isso, cada jeito de digitar inventava uma embaixadora.
   assert.deepEqual(
     embaixadorDe([convite('Alessandra'), convite('ALESSANDRA'), convite('  Alessandra  ')]),
-    { embaixadores: 1, convidados: 3, total: 4 },
+    { embaixadores: 1, convidados: 3, total: 4, noHistorico: 3 },
   );
   assert.deepEqual(
     embaixadorDe([convite('Érika'), convite('ERIKA'), convite('erika')]),
-    { embaixadores: 1, convidados: 3, total: 4 },
+    { embaixadores: 1, convidados: 3, total: 4, noHistorico: 3 },
   );
   assert.deepEqual(
     embaixadorDe([convite('Ana  Paula'), convite('ana paula')]),
-    { embaixadores: 1, convidados: 2, total: 3 },
+    { embaixadores: 1, convidados: 2, total: 3, noHistorico: 2 },
   );
 });
 
@@ -788,10 +788,10 @@ test('um evento nunca empresta embaixador para o outro', () => {
     convite('Alessandra'),
     convite('Alessandra', { editionId: 'ds-nomes-antigos', lineId: 'dinamicas-sistemicas', rawEvent: 'DAY TRAINING SIST' }),
   ];
-  assert.deepEqual(embaixadorDe(ambassadors), { embaixadores: 1, convidados: 2, total: 3 });
+  assert.deepEqual(embaixadorDe(ambassadors), { embaixadores: 1, convidados: 2, total: 3, noHistorico: 2 });
   assert.deepEqual(
     embaixadorDe(ambassadors, { ...filtroFp, lineId: 'dinamicas-sistemicas' }),
-    { embaixadores: 1, convidados: 1, total: 2 },
+    { embaixadores: 1, convidados: 1, total: 2, noHistorico: 1 },
   );
 });
 
@@ -821,4 +821,59 @@ test('o grupo do embaixador entra em Participantes, e nunca no faturamento', () 
     b.ingressos.reduce((t, i) => t + i.quantidade, 0),
     'a quantidade de ingressos vendidos nao pode mudar',
   );
+});
+
+/**
+ * O cenario exato que a IFT mandou conferir: as duas linhas de "Ana Paula
+ * Manssini" no DAY TRAINING SIST, que na planilha sao de maio/2026.
+ */
+const linhaDaPlanilha = (nome, embaixador, date) => ({
+  linha: 2, date, rawEvent: 'DAY TRAINING SIST',
+  editionId: 'ds-nomes-antigos', lineId: 'dinamicas-sistemicas', ambassador: embaixador,
+  nome,
+});
+const filtroDs = (from, to) => ({
+  lineId: 'dinamicas-sistemicas', editionId: null, from, to, campanhas: [],
+});
+
+test('as duas linhas da Ana Paula Manssini dao 1 embaixadora, 2 convidados, 3 total', () => {
+  const ambassadors = [
+    linhaDaPlanilha('Cristiane Gonçalves da Silva', 'Ana Paula Manssini', '2026-05-18'),
+    linhaDaPlanilha('Juliana Soares Manssini', 'Ana Paula Manssini', '2026-05-18'),
+  ];
+  const m = computeMetrics(
+    config, dadosDeConvite(ambassadors), filtroDs('2026-05-01', '2026-05-31'),
+  ).metrics;
+  assert.deepEqual(m.embaixador, {
+    embaixadores: 1, convidados: 2, total: 3, noHistorico: 2,
+  });
+  assert.equal(m.participantes, 3, 'as 3 pessoas entram em Participantes');
+  assert.equal(m.faturamentoLiquido, 0, 'e nada entra no faturamento');
+});
+
+/**
+ * O zero que a IFT via na tela. Nao era dado perdido: o painel abre no primeiro
+ * evento da lista, que nao tem convite nenhum, e no periodo dos ultimos 30
+ * dias. Estes dois testes travam a diferenca entre os dois tipos de zero.
+ */
+test('zero por causa do periodo aponta que ha convites em outras datas', () => {
+  const ambassadors = [
+    linhaDaPlanilha('Cristiane', 'Ana Paula Manssini', '2026-05-18'),
+    linhaDaPlanilha('Juliana', 'Ana Paula Manssini', '2026-05-18'),
+  ];
+  const m = computeMetrics(
+    config, dadosDeConvite(ambassadors), filtroDs('2026-08-17', '2026-09-15'),
+  ).metrics;
+  assert.equal(m.embaixador.total, 0, 'nenhum convite neste periodo');
+  assert.equal(m.embaixador.noHistorico, 2, 'mas existem em outras datas');
+});
+
+test('zero por falta de convite no evento inteiro nao promete nada em outras datas', () => {
+  const ambassadors = [linhaDaPlanilha('Cristiane', 'Ana Paula Manssini', '2026-05-18')];
+  // Mesmo dado, mas olhando um evento que nao tem convite nenhum.
+  const m = computeMetrics(config, dadosDeConvite(ambassadors), {
+    lineId: 'dai', editionId: null, from: '2024-01-01', to: '2026-12-31', campanhas: [],
+  }).metrics;
+  assert.equal(m.embaixador.total, 0);
+  assert.equal(m.embaixador.noHistorico, 0);
 });
