@@ -15,6 +15,27 @@ export function normalizeText(value: unknown): string {
     .trim();
 }
 
+/**
+ * Chave de comparacao de um nome de embaixador.
+ *
+ * Um embaixador e UMA pessoa, mesmo quando a equipe digita o nome dela de
+ * jeitos diferentes em linhas diferentes da planilha. Comparar o texto cru faria
+ * "Erika" e "Érika" virarem duas embaixadoras — e o numero de embaixadores
+ * subiria sem que ninguem tivesse convidado alguem.
+ *
+ * Reaproveita normalizeText (minusculas, sem acento, espacos colapsados), que e
+ * a mesma normalizacao usada para casar nome de evento e tipo de ingresso.
+ *
+ * O texto so entra na chave depois de normalizado; quando a normalizacao nao
+ * sobra nada (um nome feito so de pontuacao), vale o texto original em
+ * minusculas. Sem essa reserva, dois nomes esquisitos diferentes virariam a
+ * mesma chave vazia e contariam como um embaixador so.
+ */
+export function chaveDoEmbaixador(nome: string): string {
+  const normalizado = normalizeText(nome);
+  return normalizado || nome.trim().toLowerCase();
+}
+
 /** Extrai as tags entre colchetes de um nome de campanha: "[PAI] [VENDAS] x" -> ["pai","vendas"]. */
 export function extractTags(value: unknown): string[] {
   const raw = String(value ?? '');

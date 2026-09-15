@@ -721,3 +721,104 @@ test('toda linha com produto por edicao declara qual e a fonte de leads', () => 
     }
   }
 });
+
+/**
+ * Embaixadores e convidados, com os exemplos que a IFT escreveu.
+ *
+ * As tres contas sao diferentes e e facil confundi-las: duas linhas de
+ * "Alessandra" sao UMA embaixadora, DOIS convidados e TRES pessoas no grupo —
+ * ela mais os dois que levou. Contar as linhas como total esqueceria a
+ * embaixadora; contar os nomes unicos esqueceria os convidados.
+ */
+const convite = (ambassador, extra) => ({
+  linha: 2, date: '2026-05-10', rawEvent: 'PAI AO VIVO',
+  editionId: 'fp-nomes-antigos', lineId: 'formacao-palestrantes', ambassador, ...extra,
+});
+const dadosDeConvite = (ambassadors) => ({
+  leads: [], buyers: [], traffic: [], ambassadors, fetchedAt: '', warnings: [], falhas: [],
+});
+const filtroFp = {
+  lineId: 'formacao-palestrantes', editionId: null,
+  from: '2026-05-01', to: '2026-05-31', campanhas: [],
+};
+const embaixadorDe = (ambassadors, filtro = filtroFp) =>
+  computeMetrics(config, dadosDeConvite(ambassadors), filtro).metrics.embaixador;
+
+test('o mesmo nome duas vezes e 1 embaixadora, 2 convidados, 3 pessoas', () => {
+  assert.deepEqual(embaixadorDe([convite('Alessandra'), convite('Alessandra')]), {
+    embaixadores: 1, convidados: 2, total: 3,
+  });
+});
+
+test('dois embaixadores, um deles com duas linhas, dao 2, 3 e 5', () => {
+  const r = embaixadorDe([convite('Alessandra'), convite('João'), convite('Alessandra')]);
+  assert.deepEqual(r, { embaixadores: 2, convidados: 3, total: 5 });
+});
+
+test('sem nenhum nome preenchido, tudo fica em zero', () => {
+  assert.deepEqual(embaixadorDe([]), { embaixadores: 0, convidados: 0, total: 0 });
+});
+
+test('grafias diferentes do mesmo nome sao a mesma pessoa', () => {
+  // Caixa, espacos nas pontas, espaco duplo no meio e acento: tudo a mesma
+  // embaixadora. Sem isso, cada jeito de digitar inventava uma embaixadora.
+  assert.deepEqual(
+    embaixadorDe([convite('Alessandra'), convite('ALESSANDRA'), convite('  Alessandra  ')]),
+    { embaixadores: 1, convidados: 3, total: 4 },
+  );
+  assert.deepEqual(
+    embaixadorDe([convite('Érika'), convite('ERIKA'), convite('erika')]),
+    { embaixadores: 1, convidados: 3, total: 4 },
+  );
+  assert.deepEqual(
+    embaixadorDe([convite('Ana  Paula'), convite('ana paula')]),
+    { embaixadores: 1, convidados: 2, total: 3 },
+  );
+});
+
+test('nomes parecidos, mas diferentes, continuam sendo duas pessoas', () => {
+  // O perigo do outro lado: normalizar demais juntaria gente diferente.
+  assert.equal(embaixadorDe([convite('Priscila'), convite('Priscilla Reis')]).embaixadores, 2);
+  assert.equal(embaixadorDe([convite('Neuza'), convite('NEUZA FLAVIANO')]).embaixadores, 2);
+});
+
+test('um evento nunca empresta embaixador para o outro', () => {
+  const ambassadors = [
+    convite('Alessandra'),
+    convite('Alessandra'),
+    convite('Alessandra', { editionId: 'ds-nomes-antigos', lineId: 'dinamicas-sistemicas', rawEvent: 'DAY TRAINING SIST' }),
+  ];
+  assert.deepEqual(embaixadorDe(ambassadors), { embaixadores: 1, convidados: 2, total: 3 });
+  assert.deepEqual(
+    embaixadorDe(ambassadors, { ...filtroFp, lineId: 'dinamicas-sistemicas' }),
+    { embaixadores: 1, convidados: 1, total: 2 },
+  );
+});
+
+test('o grupo do embaixador entra em Participantes, e nunca no faturamento', () => {
+  // A venda tem de cair no MESMO evento do filtro, senao a comparacao passaria
+  // com os dois lados zerados sem provar nada sobre o faturamento.
+  const venda = {
+    linha: 2, date: '2026-05-10', rawEvent: '#03 Day Training', editionId: 'fp-ed-03',
+    lineId: 'formacao-palestrantes', ticketKind: 'individual', rawTicketType: 'individual',
+    ambassador: '', valor: 97,
+  };
+  const comVenda = {
+    ...dadosDeConvite([convite('Alessandra'), convite('Alessandra')]),
+    buyers: [venda],
+  };
+  const semConvite = { ...comVenda, ambassadors: [] };
+
+  const a = computeMetrics(config, comVenda, filtroFp).metrics;
+  const b = computeMetrics(config, semConvite, filtroFp).metrics;
+
+  assert.ok(b.faturamentoLiquido > 0, 'a venda precisa estar contando, senao o teste nao prova nada');
+  assert.equal(b.participantes, 1, 'so a pessoa do ingresso');
+  assert.equal(a.participantes, b.participantes + 3, 'as 3 pessoas do grupo entram');
+  assert.equal(a.faturamentoLiquido, b.faturamentoLiquido, 'o faturamento nao pode mudar');
+  assert.equal(
+    a.ingressos.reduce((t, i) => t + i.quantidade, 0),
+    b.ingressos.reduce((t, i) => t + i.quantidade, 0),
+    'a quantidade de ingressos vendidos nao pode mudar',
+  );
+});

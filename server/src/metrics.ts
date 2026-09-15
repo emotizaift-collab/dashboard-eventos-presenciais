@@ -11,6 +11,7 @@ import type {
   AppConfig, DataSet, DailyPoint, Metrics, ValorNaoClassificado,
 } from '../../shared/types.js';
 import { precoDoTipo } from '../../shared/types.js';
+import { chaveDoEmbaixador } from './normalize.js';
 
 /** Tipos que representam a 2a/3a pessoa de um ingresso ja pago. */
 function ehAcompanhante(id: string): boolean {
@@ -210,9 +211,12 @@ export function computeMetrics(
       noEscopoDasCampanhas(row.lineId) &&
       inRange(row.date, filter.from, filter.to),
   );
+  // Cada linha preenchida e um convidado; cada nome distinto e um embaixador.
+  // Sao numeros diferentes de proposito: duas linhas de "Alessandra" sao uma
+  // embaixadora que levou duas pessoas, e o grupo dela tem tres pessoas.
   const convidados = comEmbaixador.length;
   const embaixadores = new Set(
-    comEmbaixador.map((row) => row.ambassador.trim().toLowerCase()),
+    comEmbaixador.map((row) => chaveDoEmbaixador(row.ambassador)),
   ).size;
 
   // Cada ingresso que leva mais de uma pessoa gera acompanhante: o duplo pede 1
