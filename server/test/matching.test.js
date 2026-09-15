@@ -31,8 +31,11 @@ const casos = [
   // Evento B — nome novo
   ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-ed-01'],
   ['ANIMA Day', 'anima', 'anima-ed-01'],
-  // "Day Training Sist" e o Dinamicas Sistemicas abreviado — nao o ANIMA.
-  ['Day Training Sist', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
+  // "DAY TRAINING SIST" e como a aba LISTA DE PARTICIPANTES PRESENCIAL escreve o
+  // ANIMA Day. Confirmado pela IFT. Eu tinha movido este apelido para o
+  // Dinamicas Sistemicas por conta propria, lendo "Sist" como "Sistemicas" — era
+  // palpite meu, e estava errado.
+  ['Day Training Sist', 'anima', 'anima-ed-01'],
 ];
 
 test('reconhece as campanhas e os nomes dos dois eventos', () => {
@@ -497,5 +500,40 @@ test('os nomes proprios do Formacao de Palestrantes nao se movem', () => {
   ];
   for (const produto of produtos) {
     assert.equal(matchEdition(matcher, produto, depois)?.lineId, 'formacao-palestrantes', produto);
+  }
+});
+
+
+/**
+ * O nome do evento na tela e o nome na planilha sao textos diferentes, e a
+ * ponte entre os dois sao os apelidos da edicao — o mecanismo que o painel ja
+ * usa para tudo. Nao ha, e nao deve haver, uma tabela de-para separada.
+ *
+ * O caso: quem escolhe "ANIMA Day" no painel esta pedindo as linhas que a aba
+ * LISTA DE PARTICIPANTES PRESENCIAL grava como "DAY TRAINING SIST".
+ */
+test('"DAY TRAINING SIST" da lista de participantes e o ANIMA Day', () => {
+  // Em qualquer grafia e em qualquer data: este apelido nao tem vigencia.
+  for (const texto of ['DAY TRAINING SIST', 'Day Training Sist', '  day training sist  ']) {
+    assert.equal(matchEdition(matcher, texto)?.lineId, 'anima', `sem data: ${texto}`);
+    assert.equal(matchEdition(matcher, texto, '2026-05-18')?.lineId, 'anima', `em maio: ${texto}`);
+    assert.equal(matchEdition(matcher, texto, '2026-09-10')?.lineId, 'anima', `em setembro: ${texto}`);
+  }
+});
+
+test('o nome completo do Dinamicas Sistemicas continua sendo dele', () => {
+  // O risco do outro lado: "DAY TRAINING SIST" virar ANIMA nao pode arrastar
+  // junto os produtos "Day Training - Dinamicas Sistemicas", que sao R$ 20 mil
+  // de faturamento de outro evento.
+  const casos = [
+    ['Day Training - Dinâmicas Sistêmicas', 'ds-ed-01'],
+    ['#02 Day Training - Dinâmicas Sistêmicas', 'ds-ed-02'],
+    ['#04 Day Training - Dinâmicas Sistêmicas', 'ds-ed-04'],
+    ['DINAMICASAOVIVO', 'ds-nomes-antigos'],
+  ];
+  for (const [texto, esperado] of casos) {
+    const r = matchEdition(matcher, texto, '2026-05-18');
+    assert.equal(r?.lineId, 'dinamicas-sistemicas', texto);
+    assert.equal(r?.editionId, esperado, texto);
   }
 });
