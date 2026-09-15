@@ -52,7 +52,17 @@ export function App() {
         const [estadoInicial, configInicial] = await Promise.all([api.estado(), api.config()]);
         setEstado(estadoInicial);
         setConfig(configInicial);
-        setSelecao((atual) => atual || `linha:${estadoInicial.eventLines[0]?.id ?? 'todos'}`);
+        // Abre em "Todos os eventos", nao no primeiro da lista.
+        //
+        // O primeiro da lista e so quem ficou em primeiro no arquivo de
+        // configuracao — hoje o Dinamicas de Alto Impacto, que nao tem convite
+        // de embaixador nenhum. Quem abria o painel via 0 Embaixadores,
+        // 0 Convidados, 0 Total e concluia que a funcionalidade estava
+        // quebrada, quando o numero era verdadeiro para AQUELE evento: em
+        // "Todos os eventos", o mesmo periodo mostra 11 / 16 / 27.
+        //
+        // Painel bom abre mostrando tudo e deixa a pessoa estreitar.
+        setSelecao((atual) => atual || 'linha:todos');
       } catch (falha) {
         setErro(falha instanceof Error ? falha.message : String(falha));
       }
