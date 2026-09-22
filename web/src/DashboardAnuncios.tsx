@@ -1,51 +1,37 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import type { MetricsResponse } from '../../shared/types';
 import { api, type EstadoApp } from './api';
+import { dataBr, hoje } from './format';
 
 /**
  * Dashboard de Anúncios — Painel Executivo.
  *
- * Diferente das outras seções, este painel NÃO lê as planilhas: são números que
- * a pessoa preenche à mão a cada ciclo de campanha (investido, leads, vendas,
- * embaixadores, convidados, meta e a data do evento). A partir deles o painel
- * calcula sozinho:
- *   - Faltam para a meta = meta − vendas (pode ficar negativo, se passar da meta)
- *   - Dias até o evento   = a partir da data digitada
+ * Ao escolher um evento, o painel PUXA os números reais das planilhas para o
+ * período do próprio evento (o mesmo recorte de "Período desta edição" da aba
+ * Eventos Presenciais): investido (custo de campanha), leads, vendas,
+ * embaixadores e convidados. Só ficam manuais a Meta (padrão 60) e a Data do
+ * evento — e a partir dela o painel calcula os dias que faltam.
+ *
+ * Derivados:
+ *   - Faltam para a meta   = meta − vendas (pode ficar negativo, se passar)
  *   - Total de participantes = embaixadores + convidados + vendas
+ *   - Dias até o evento    = a partir da data digitada
  *
- * O seletor de Evento espelha o da aba Eventos Presenciais (Todos os eventos e
- * as edições dentro de cada um): serve para registrar a que evento este ciclo se
- * refere, sem ter de garimpar nomes de campanha.
- *
- * O que a pessoa digita fica guardado no próprio navegador (localStorage), então
- * recarregar a página não apaga o preenchimento. É por navegador/dispositivo —
- * não é compartilhado nem lido pelo servidor.
+ * Meta e Data do evento ficam guardadas no próprio navegador (localStorage), por
+ * navegador/dispositivo — não são compartilhadas nem lidas pelo servidor.
  */
 
-const CHAVE = 'ift.dashboard-anuncios.v1';
+const CHAVE = 'ift.dashboard-anuncios.v2';
 
-interface Estado {
-  investido: string; // texto livre, formato "2.354,79"
-  leads: string;
-  vendas: string;
+interface Manual {
   meta: string;
-  embaixadores: string;
-  convidados: string;
   dataEvento: string; // yyyy-mm-dd
   evento: string; // "linha:todos", "linha:<id>" ou "ed:<id>"
 }
 
-const INICIAL: Estado = {
-  investido: '',
-  leads: '',
-  vendas: '',
-  meta: '60',
-  embaixadores: '',
-  convidados: '',
-  dataEvento: '',
-  evento: 'linha:todos',
-};
+const INICIAL: Manual = { meta: '60', dataEvento: '', evento: 'linha:todos' };
 
-function carregar(): Estado {
+function carregar(): Manual {
   try {
     const bruto = localStorage.getItem(CHAVE);
     if (bruto) return { ...INICIAL, ...JSON.parse(bruto) };
@@ -55,32 +41,60 @@ function carregar(): Estado {
   return INICIAL;
 }
 
-/** Converte "2.354,79" ou "76" em número; vazio ou inválido vira 0. */
-function paraNumero(texto: string): number {
-  if (!texto) return 0;
-  let s = texto.trim();
-  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(s.replace(/[^\d.-]/g, ''));
+const inteiro = (t: string) => {
+  const n = parseInt((t || '').replace(/[^\d-]/g, ''), 10);
   return Number.isFinite(n) ? n : 0;
-}
-
-const inteiro = (t: string) => Math.round(paraNumero(t));
+};
 
 const reais = (n: number) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const numero = (n: number) => n.toLocaleString('pt-BR');
 
 function diasAteEvento(data: string): number | null {
   if (!data) return null;
   const evento = new Date(data + 'T00:00:00');
   if (Number.isNaN(evento.getTime())) return null;
   const agora = new Date();
-  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-  return Math.round((evento.getTime() - hoje.getTime()) / 86_400_000);
+  const hojeD = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  return Math.round((evento.getTime() - hojeD.getTime()) / 86_400_000);
+}
+
+/** De qual período puxar os números para o evento selecionado. */
+function periodoDoEvento(
+  evento: string,
+  eventLines: EstadoApp['eventLines'],
+): { from: string; to: string } {
+  const tudo = { from: '2024-01-01', to: hoje() };
+
+  if (evento === 'linha:todos') return tudo;
+
+  if (evento.startsWith('ed:')) {
+    const id = evento.slice(3);
+    for (const linha of eventLines) {
+      const ed = linha.editions.find((e) => e.id === id);
+      if (ed) return ed.periodoDeVendas ? { from: ed.periodoDeVendas.de, to: ed.periodoDeVendas.ate } : tudo;
+    }
+    return tudo;
+  }
+
+  // linha:<id> — evento inteiro: do início da edição mais antiga ao fim da mais recente.
+  const id = evento.replace(/^linha:/, '');
+  const linha = eventLines.find((l) => l.id === id);
+  const periodos = (linha?.editions ?? [])
+    .map((e) => e.periodoDeVendas)
+    .filter((p): p is { de: string; ate: string } => Boolean(p));
+  if (periodos.length === 0) return tudo;
+  const de = periodos.map((p) => p.de).sort()[0];
+  const ate = periodos.map((p) => p.ate).sort().slice(-1)[0];
+  return { from: de, to: ate };
 }
 
 export function DashboardAnuncios() {
-  const [estado, setEstado] = useState<Estado>(carregar);
+  const [manual, setManual] = useState<Manual>(carregar);
   const [eventLines, setEventLines] = useState<EstadoApp['eventLines']>([]);
+  const [dados, setDados] = useState<MetricsResponse | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   // Lista de eventos e edições: a mesma fonte da aba Eventos Presenciais.
   useEffect(() => {
@@ -96,79 +110,77 @@ export function DashboardAnuncios() {
     };
   }, []);
 
+  // Persiste apenas os campos manuais.
   useEffect(() => {
     try {
-      localStorage.setItem(CHAVE, JSON.stringify(estado));
+      localStorage.setItem(CHAVE, JSON.stringify(manual));
     } catch {
       // Sem persistência disponível: o painel continua funcionando na sessão.
     }
-  }, [estado]);
+  }, [manual]);
 
-  const set = (campo: keyof Estado) =>
+  const periodo = useMemo(
+    () => periodoDoEvento(manual.evento, eventLines),
+    [manual.evento, eventLines],
+  );
+
+  // Puxa os números reais do período do evento selecionado.
+  useEffect(() => {
+    let cancelado = false;
+    const edicao = manual.evento.startsWith('ed:') ? manual.evento.slice(3) : '';
+    const linha = edicao ? 'todos' : manual.evento.replace(/^linha:/, '');
+    setCarregando(true);
+    api
+      .metricas({
+        line: linha,
+        edition: edicao || undefined,
+        from: periodo.from,
+        to: periodo.to,
+        campanhas: [],
+      })
+      .then((r) => {
+        if (cancelado) return;
+        setDados(r);
+        setErro(null);
+      })
+      .catch((falha) => {
+        if (cancelado) return;
+        setErro(falha instanceof Error ? falha.message : String(falha));
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [manual.evento, periodo.from, periodo.to]);
+
+  const setCampo = (campo: keyof Manual) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setEstado((atual) => ({ ...atual, [campo]: e.target.value }));
+      setManual((atual) => ({ ...atual, [campo]: e.target.value }));
 
-  const vendas = inteiro(estado.vendas);
-  const meta = inteiro(estado.meta);
+  const m = dados?.metrics ?? null;
+  const investido = m?.custoCampanha ?? 0;
+  const leadsSemFonte = m?.leadsSemFonte ?? false;
+  const leads = m?.leadsTotal ?? 0;
+  const vendas = m ? m.ingressos.reduce((soma, i) => soma + i.quantidade, 0) : 0;
+  const embaixadores = m?.embaixador.embaixadores ?? 0;
+  const convidados = m?.embaixador.convidados ?? 0;
+
+  const meta = inteiro(manual.meta);
   const faltam = meta - vendas;
-  const total = inteiro(estado.embaixadores) + inteiro(estado.convidados) + vendas;
-  const dias = useMemo(() => diasAteEvento(estado.dataEvento), [estado.dataEvento]);
+  const total = embaixadores + convidados + vendas;
+  const dias = useMemo(() => diasAteEvento(manual.dataEvento), [manual.dataEvento]);
 
-  const classeFaltam =
-    faltam <= 0 ? 'positivo' : faltam <= Math.max(1, meta * 0.25) ? 'acento' : 'negativo';
+  const corFaltam =
+    faltam <= 0 ? 'var(--positivo)' : faltam <= Math.max(1, meta * 0.25) ? 'var(--acento)' : 'var(--negativo)';
 
   return (
     <>
       <div className="filtros">
         <div className="campo">
-          <label htmlFor="an-investido">Investido (c/ imposto)</label>
-          <input
-            id="an-investido"
-            inputMode="decimal"
-            placeholder="0,00"
-            value={estado.investido}
-            onChange={set('investido')}
-          />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-leads">Leads gerados</label>
-          <input id="an-leads" inputMode="numeric" placeholder="0" value={estado.leads} onChange={set('leads')} />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-vendas">Vendas</label>
-          <input id="an-vendas" inputMode="numeric" placeholder="0" value={estado.vendas} onChange={set('vendas')} />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-meta">Meta</label>
-          <input id="an-meta" inputMode="numeric" placeholder="60" value={estado.meta} onChange={set('meta')} />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-embaixadores">Embaixadores</label>
-          <input
-            id="an-embaixadores"
-            inputMode="numeric"
-            placeholder="0"
-            value={estado.embaixadores}
-            onChange={set('embaixadores')}
-          />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-convidados">Convidados</label>
-          <input
-            id="an-convidados"
-            inputMode="numeric"
-            placeholder="0"
-            value={estado.convidados}
-            onChange={set('convidados')}
-          />
-        </div>
-        <div className="campo">
-          <label htmlFor="an-data">Data do evento</label>
-          <input id="an-data" type="date" value={estado.dataEvento} onChange={set('dataEvento')} />
-        </div>
-        <div className="campo">
           <label htmlFor="an-evento">Evento</label>
-          <select id="an-evento" value={estado.evento} onChange={set('evento')}>
+          <select id="an-evento" value={manual.evento} onChange={setCampo('evento')}>
             <option value="linha:todos">Todos os eventos</option>
             {eventLines.map((item) => (
               <optgroup key={item.id} label={item.label}>
@@ -182,7 +194,21 @@ export function DashboardAnuncios() {
             ))}
           </select>
         </div>
+        <div className="campo">
+          <label htmlFor="an-meta">Meta</label>
+          <input id="an-meta" inputMode="numeric" placeholder="60" value={manual.meta} onChange={setCampo('meta')} />
+        </div>
+        <div className="campo">
+          <label htmlFor="an-data">Data do evento</label>
+          <input id="an-data" type="date" value={manual.dataEvento} onChange={setCampo('dataEvento')} />
+        </div>
       </div>
+
+      {erro && (
+        <div className="aviso erro">
+          <strong>Não foi possível ler as planilhas:</strong> {erro}
+        </div>
+      )}
 
       {/* KPI herói: dias até o evento é a leitura de 10 segundos. */}
       <div className="heroi">
@@ -201,50 +227,49 @@ export function DashboardAnuncios() {
         </div>
       </div>
 
-      <div className="metricas">
-        <div className="metrica">
-          <div className="metrica-rotulo">Investido (c/ imposto)</div>
-          <div className="metrica-valor">{reais(paraNumero(estado.investido))}</div>
-        </div>
-        <div className="metrica">
-          <div className="metrica-rotulo">Leads gerados</div>
-          <div className="metrica-valor num">{inteiro(estado.leads)}</div>
-        </div>
-        <div className="metrica">
-          <div className="metrica-rotulo">Vendas</div>
-          <div className="metrica-valor num">{vendas}</div>
-          <div className="metrica-nota">Meta: {meta}</div>
-        </div>
-        <div className="metrica">
-          <div className="metrica-rotulo">Faltam para a meta</div>
-          <div
-            className="metrica-valor num"
-            style={{
-              color:
-                classeFaltam === 'positivo'
-                  ? 'var(--positivo)'
-                  : classeFaltam === 'negativo'
-                    ? 'var(--negativo)'
-                    : 'var(--acento)',
-            }}
-          >
-            {faltam}
+      {carregando && !m ? (
+        <div className="carregando">Puxando os números do evento...</div>
+      ) : (
+        <div className="metricas">
+          <div className="metrica">
+            <div className="metrica-rotulo">Investido (c/ imposto)</div>
+            <div className="metrica-valor num">{reais(investido)}</div>
           </div>
-          <div className="metrica-nota">
-            {faltam <= 0 ? 'Meta batida' : 'meta − vendas'}
+          <div className="metrica">
+            <div className="metrica-rotulo">Leads gerados</div>
+            <div className="metrica-valor num">{leadsSemFonte ? '—' : numero(leads)}</div>
+          </div>
+          <div className="metrica">
+            <div className="metrica-rotulo">Vendas</div>
+            <div className="metrica-valor num">{numero(vendas)}</div>
+            <div className="metrica-nota">Meta: {meta}</div>
+          </div>
+          <div className="metrica">
+            <div className="metrica-rotulo">Faltam para a meta</div>
+            <div className="metrica-valor num" style={{ color: corFaltam }}>{faltam}</div>
+            <div className="metrica-nota">{faltam <= 0 ? 'Meta batida' : 'meta − vendas'}</div>
+          </div>
+          <div className="metrica">
+            <div className="metrica-rotulo">Embaixadores</div>
+            <div className="metrica-valor num">{numero(embaixadores)}</div>
+          </div>
+          <div className="metrica">
+            <div className="metrica-rotulo">Convidados</div>
+            <div className="metrica-valor num">{numero(convidados)}</div>
+          </div>
+          <div className="metrica">
+            <div className="metrica-rotulo">Total de participantes</div>
+            <div className="metrica-valor num">{numero(total)}</div>
+            <div className="metrica-nota">embaixadores + convidados + vendas</div>
           </div>
         </div>
-        <div className="metrica">
-          <div className="metrica-rotulo">Total de participantes</div>
-          <div className="metrica-valor num">{total}</div>
-          <div className="metrica-nota">embaixadores + convidados + vendas</div>
-        </div>
-      </div>
+      )}
 
       <p className="rodape">
-        Os números deste painel são preenchidos à mão, a cada ciclo. O que você digita fica salvo neste
-        navegador — recarregar a página não apaga. Dias até o evento, faltam para a meta e total de
-        participantes são calculados automaticamente.
+        Investido, leads, vendas, embaixadores e convidados são puxados das planilhas para o período do
+        evento selecionado{dados ? ` (${dataBr(periodo.from)} a ${dataBr(periodo.to)})` : ''}. Meta e data do
+        evento você preenche à mão — ficam salvas neste navegador. Faltam para a meta e total de participantes
+        são calculados automaticamente.
       </p>
     </>
   );
