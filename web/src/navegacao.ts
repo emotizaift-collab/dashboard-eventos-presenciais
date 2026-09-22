@@ -26,6 +26,7 @@ export const MENU: GrupoDeMenu[] = [
     itens: [
       { id: 'eventos-presenciais', label: 'Eventos Presenciais' },
       { id: 'high-ticket', label: 'High Ticket' },
+      { id: 'dashboard-anuncios', label: 'Dashboard de Anúncios' },
     ],
   },
   {

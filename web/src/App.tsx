@@ -4,6 +4,7 @@ import { api, conectarAoVivo, type EstadoApp } from './api';
 import { FiltroCampanhas } from './FiltroCampanhas';
 import { Painel } from './Painel';
 import { HighTicket } from './HighTicket';
+import { DashboardAnuncios } from './DashboardAnuncios';
 import { Configuracao } from './Configuracao';
 import { Sidebar } from './Sidebar';
 import { dataBr, diasAtras, hoje, horaBr, inicioDoMes } from './format';
@@ -12,6 +13,7 @@ import { dataBr, diasAtras, hoje, horaBr, inicioDoMes } from './format';
 const TITULO_DA_SECAO: Record<string, string> = {
   'eventos-presenciais': 'Eventos Presenciais',
   'high-ticket': 'High Ticket',
+  'dashboard-anuncios': 'Dashboard de Anúncios',
   configuracao: 'Configuração',
 };
 
@@ -186,7 +188,9 @@ export function App() {
             ? 'Nomes dos eventos, tipos de ingresso e de onde os dados são lidos.'
             : naSecao('high-ticket')
               ? 'IFT e Sistêmico lado a lado, no período selecionado.'
-              : `Ingresso individual: ${estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+              : naSecao('dashboard-anuncios')
+                ? 'Painel executivo do evento: preencha os números do ciclo e acompanhe a meta.'
+                : `Ingresso individual: ${estado.ticketPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
         </p>
       </header>
 
@@ -356,6 +360,8 @@ export function App() {
           </p>
         </>
       )}
+
+      {naSecao('dashboard-anuncios') && <DashboardAnuncios />}
 
       {naSecao('configuracao') && (
         <Configuracao
