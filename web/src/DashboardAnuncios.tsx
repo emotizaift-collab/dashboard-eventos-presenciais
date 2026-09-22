@@ -1,24 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { MetricsResponse } from '../../shared/types';
 import { api, type EstadoApp } from './api';
-import { dataBr, hoje } from './format';
+import { dataBr, diasAtras, hoje, inicioDoMes } from './format';
 
 /**
  * Dashboard de Anúncios — Painel Executivo.
  *
- * Ao escolher um evento, o painel PUXA os números reais das planilhas para o
- * período do próprio evento (o mesmo recorte de "Período desta edição" da aba
- * Eventos Presenciais): investido (custo de campanha), leads, vendas,
- * embaixadores e convidados. Só ficam manuais a Meta (padrão 60) e a Data do
- * evento — e a partir dela o painel calcula os dias que faltam.
+ * Calcula EXATAMENTE como a aba Eventos Presenciais: os números vêm das
+ * planilhas para o Evento selecionado e a janela de datas escolhida (Data
+ * inicial/final, padrão últimos 30 dias). Assim o custo/investido bate com o
+ * daquela aba — antes divergiam porque este painel usava o período de vendas do
+ * evento, e o custo de campanha é filtrado por data.
  *
+ * Puxados das planilhas: investido (custo de campanha), leads, vendas,
+ * embaixadores, convidados.
  * Derivados:
  *   - Faltam para a meta   = meta − vendas (pode ficar negativo, se passar)
  *   - Total de participantes = embaixadores + convidados + vendas
  *   - Dias até o evento    = a partir da data digitada
  *
- * Meta e Data do evento ficam guardadas no próprio navegador (localStorage), por
- * navegador/dispositivo — não são compartilhadas nem lidas pelo servidor.
+ * Manuais: Meta (padrão 60) e Data do evento — guardadas no próprio navegador
+ * (localStorage), por navegador/dispositivo. A janela de datas segue a mesma
+ * lógica da aba Eventos Presenciais e não é persistida (reabre nos últimos 30
+ * dias).
  */
 
 const CHAVE = 'ift.dashboard-anuncios.v2';
@@ -59,42 +63,16 @@ function diasAteEvento(data: string): number | null {
   return Math.round((evento.getTime() - hojeD.getTime()) / 86_400_000);
 }
 
-/** De qual período puxar os números para o evento selecionado. */
-function periodoDoEvento(
-  evento: string,
-  eventLines: EstadoApp['eventLines'],
-): { from: string; to: string } {
-  const tudo = { from: '2024-01-01', to: hoje() };
-
-  if (evento === 'linha:todos') return tudo;
-
-  if (evento.startsWith('ed:')) {
-    const id = evento.slice(3);
-    for (const linha of eventLines) {
-      const ed = linha.editions.find((e) => e.id === id);
-      if (ed) return ed.periodoDeVendas ? { from: ed.periodoDeVendas.de, to: ed.periodoDeVendas.ate } : tudo;
-    }
-    return tudo;
-  }
-
-  // linha:<id> — evento inteiro: do início da edição mais antiga ao fim da mais recente.
-  const id = evento.replace(/^linha:/, '');
-  const linha = eventLines.find((l) => l.id === id);
-  const periodos = (linha?.editions ?? [])
-    .map((e) => e.periodoDeVendas)
-    .filter((p): p is { de: string; ate: string } => Boolean(p));
-  if (periodos.length === 0) return tudo;
-  const de = periodos.map((p) => p.de).sort()[0];
-  const ate = periodos.map((p) => p.ate).sort().slice(-1)[0];
-  return { from: de, to: ate };
-}
-
 export function DashboardAnuncios() {
   const [manual, setManual] = useState<Manual>(carregar);
   const [eventLines, setEventLines] = useState<EstadoApp['eventLines']>([]);
   const [dados, setDados] = useState<MetricsResponse | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Janela de datas: mesma lógica da aba Eventos Presenciais (padrão 30 dias).
+  const [de, setDe] = useState(diasAtras(29));
+  const [ate, setAte] = useState(hoje());
 
   // Lista de eventos e edições: a mesma fonte da aba Eventos Presenciais.
   useEffect(() => {
@@ -119,25 +97,14 @@ export function DashboardAnuncios() {
     }
   }, [manual]);
 
-  const periodo = useMemo(
-    () => periodoDoEvento(manual.evento, eventLines),
-    [manual.evento, eventLines],
-  );
-
-  // Puxa os números reais do período do evento selecionado.
+  // Puxa os números reais — mesmíssima chamada da aba Eventos Presenciais.
   useEffect(() => {
     let cancelado = false;
     const edicao = manual.evento.startsWith('ed:') ? manual.evento.slice(3) : '';
     const linha = edicao ? 'todos' : manual.evento.replace(/^linha:/, '');
     setCarregando(true);
     api
-      .metricas({
-        line: linha,
-        edition: edicao || undefined,
-        from: periodo.from,
-        to: periodo.to,
-        campanhas: [],
-      })
+      .metricas({ line: linha, edition: edicao || undefined, from: de, to: ate, campanhas: [] })
       .then((r) => {
         if (cancelado) return;
         setDados(r);
@@ -153,7 +120,7 @@ export function DashboardAnuncios() {
     return () => {
       cancelado = true;
     };
-  }, [manual.evento, periodo.from, periodo.to]);
+  }, [manual.evento, de, ate]);
 
   const setCampo = (campo: keyof Manual) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -194,10 +161,33 @@ export function DashboardAnuncios() {
             ))}
           </select>
         </div>
+
+        <div className="campo">
+          <label htmlFor="an-de">Data inicial</label>
+          <input id="an-de" type="date" value={de} max={ate} onChange={(e) => setDe(e.target.value)} />
+        </div>
+
+        <div className="campo">
+          <label htmlFor="an-ate">Data final</label>
+          <input id="an-ate" type="date" value={ate} min={de} onChange={(e) => setAte(e.target.value)} />
+        </div>
+
+        <div className="campo">
+          <label>Atalhos</label>
+          <div className="atalhos">
+            <button onClick={() => { setDe(hoje()); setAte(hoje()); }}>Hoje</button>
+            <button onClick={() => { setDe(diasAtras(6)); setAte(hoje()); }}>7 dias</button>
+            <button onClick={() => { setDe(diasAtras(29)); setAte(hoje()); }}>30 dias</button>
+            <button onClick={() => { setDe(inicioDoMes()); setAte(hoje()); }}>Este mês</button>
+            <button onClick={() => { setDe('2024-01-01'); setAte(hoje()); }}>Tudo</button>
+          </div>
+        </div>
+
         <div className="campo">
           <label htmlFor="an-meta">Meta</label>
           <input id="an-meta" inputMode="numeric" placeholder="60" value={manual.meta} onChange={setCampo('meta')} />
         </div>
+
         <div className="campo">
           <label htmlFor="an-data">Data do evento</label>
           <input id="an-data" type="date" value={manual.dataEvento} onChange={setCampo('dataEvento')} />
@@ -266,10 +256,10 @@ export function DashboardAnuncios() {
       )}
 
       <p className="rodape">
-        Investido, leads, vendas, embaixadores e convidados são puxados das planilhas para o período do
-        evento selecionado{dados ? ` (${dataBr(periodo.from)} a ${dataBr(periodo.to)})` : ''}. Meta e data do
-        evento você preenche à mão — ficam salvas neste navegador. Faltam para a meta e total de participantes
-        são calculados automaticamente.
+        Investido, leads, vendas, embaixadores e convidados são puxados das planilhas para o evento e a
+        janela de datas selecionados{dados ? ` (${dataBr(de)} a ${dataBr(ate)})` : ''} — o mesmo cálculo da
+        aba Eventos Presenciais. Meta e data do evento você preenche à mão (ficam salvas neste navegador).
+        Faltam para a meta e total de participantes são calculados automaticamente.
       </p>
     </>
   );
