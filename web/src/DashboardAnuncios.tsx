@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { CampanhaResumo } from '../../shared/types';
-import { api } from './api';
-import { hoje } from './format';
-import { FiltroCampanhas } from './FiltroCampanhas';
+import { api, type EstadoApp } from './api';
 
 /**
  * Dashboard de Anúncios — Painel Executivo.
@@ -14,6 +11,10 @@ import { FiltroCampanhas } from './FiltroCampanhas';
  *   - Faltam para a meta = meta − vendas (pode ficar negativo, se passar da meta)
  *   - Dias até o evento   = a partir da data digitada
  *   - Total de participantes = embaixadores + convidados + vendas
+ *
+ * O seletor de Evento espelha o da aba Eventos Presenciais (Todos os eventos e
+ * as edições dentro de cada um): serve para registrar a que evento este ciclo se
+ * refere, sem ter de garimpar nomes de campanha.
  *
  * O que a pessoa digita fica guardado no próprio navegador (localStorage), então
  * recarregar a página não apaga o preenchimento. É por navegador/dispositivo —
@@ -30,7 +31,7 @@ interface Estado {
   embaixadores: string;
   convidados: string;
   dataEvento: string; // yyyy-mm-dd
-  campanhas: string[]; // nomes das campanhas selecionadas para este ciclo
+  evento: string; // "linha:todos", "linha:<id>" ou "ed:<id>"
 }
 
 const INICIAL: Estado = {
@@ -41,7 +42,7 @@ const INICIAL: Estado = {
   embaixadores: '',
   convidados: '',
   dataEvento: '',
-  campanhas: [],
+  evento: 'linha:todos',
 };
 
 function carregar(): Estado {
@@ -79,15 +80,15 @@ function diasAteEvento(data: string): number | null {
 
 export function DashboardAnuncios() {
   const [estado, setEstado] = useState<Estado>(carregar);
-  const [listaCampanhas, setListaCampanhas] = useState<CampanhaResumo[]>([]);
+  const [eventLines, setEventLines] = useState<EstadoApp['eventLines']>([]);
 
-  // Lista TODAS as campanhas: busca o período inteiro, sem recorte de datas.
+  // Lista de eventos e edições: a mesma fonte da aba Eventos Presenciais.
   useEffect(() => {
     let cancelado = false;
     api
-      .campanhas({ from: '2024-01-01', to: hoje() })
+      .estado()
       .then((r) => {
-        if (!cancelado) setListaCampanhas(r.campanhas);
+        if (!cancelado) setEventLines(r.eventLines);
       })
       .catch(() => undefined);
     return () => {
@@ -103,8 +104,9 @@ export function DashboardAnuncios() {
     }
   }, [estado]);
 
-  const set = (campo: keyof Estado) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setEstado((atual) => ({ ...atual, [campo]: e.target.value }));
+  const set = (campo: keyof Estado) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setEstado((atual) => ({ ...atual, [campo]: e.target.value }));
 
   const vendas = inteiro(estado.vendas);
   const meta = inteiro(estado.meta);
@@ -164,13 +166,21 @@ export function DashboardAnuncios() {
           <label htmlFor="an-data">Data do evento</label>
           <input id="an-data" type="date" value={estado.dataEvento} onChange={set('dataEvento')} />
         </div>
-        <div className="campo" style={{ minWidth: 260 }}>
-          <label>Campanhas</label>
-          <FiltroCampanhas
-            campanhas={listaCampanhas}
-            selecionadas={estado.campanhas}
-            aoMudar={(nomes) => setEstado((atual) => ({ ...atual, campanhas: nomes }))}
-          />
+        <div className="campo">
+          <label htmlFor="an-evento">Evento</label>
+          <select id="an-evento" value={estado.evento} onChange={set('evento')}>
+            <option value="linha:todos">Todos os eventos</option>
+            {eventLines.map((item) => (
+              <optgroup key={item.id} label={item.label}>
+                <option value={`linha:${item.id}`}>{item.label} — todas as edições</option>
+                {item.editions.map((ed) => (
+                  <option key={ed.id} value={`ed:${ed.id}`}>
+                    {ed.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
       </div>
 
