@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>High Ticket — IFT</title>
+<style>
+:root{--bg:#14120f;--panel:#1c1916;--panel2:#221e1a;--text:#edeae4;--muted:#9c958a;--line:#2a2621;--line2:#3a352e;--accent:#c08a4e;--green:#6fa287;--red:#b5564b}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{font-size:14px}.layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.side{border-right:1px solid var(--line);padding:26px 0 22px;position:sticky;top:0;height:100vh}.brand{padding:0 22px 26px}.brand b{display:block;font-size:15px}.brand span{color:var(--muted);font-size:12px}.navTitle{color:var(--muted);font-size:12px;padding:0 22px 8px}.navItem{display:block;padding:11px 22px;color:var(--muted);border-left:2px solid transparent;text-decoration:none}.navItem:hover{color:var(--text);background:var(--panel)}.navItem.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}.sideFoot{position:absolute;bottom:22px;left:22px;color:var(--muted);font-size:12px;line-height:1.5}
+main{padding:30px 34px 60px;max-width:1600px}.head h1{font-size:21px;margin:0}.head p{color:var(--muted);font-size:13px;margin:5px 0 24px}
+.controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end;padding:18px 0 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:28px}.field{display:flex;flex-direction:column;gap:7px}.field label{color:var(--muted);font-size:12px}.field input{height:42px;min-width:170px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:0 11px;font:inherit}.shortcuts{display:flex;gap:6px;flex-wrap:wrap}.shortcuts button,.btn{height:42px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:4px;padding:0 12px;cursor:pointer;font:inherit}.shortcuts button:hover,.btn:hover{background:var(--panel2);border-color:var(--line2)}.btn{font-weight:650}.status{margin-bottom:18px;padding:12px 14px;background:var(--panel);border-left:2px solid var(--accent);color:var(--muted);font-size:12px;line-height:1.5;display:none}.status.show{display:block}.status.error{border-left-color:var(--red)}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:0 42px}.brandPanel+.brandPanel{border-left:1px solid var(--line);padding-left:42px}.brandName{font-size:17px;margin:0 0 18px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid var(--line);margin-bottom:26px}.metric{padding:18px 16px 20px;border-left:1px solid var(--line);border-top:1px solid var(--line);min-height:102px}.metric:nth-child(3n+1){border-left:0;padding-left:0}.metricLabel{font-size:12px;color:var(--muted)}.metricValue{font-size:24px;margin-top:7px;font-variant-numeric:tabular-nums}.metricNote{font-size:11px;color:var(--muted);margin-top:5px}
+.chartBox{padding:20px 0 26px;border-bottom:1px solid var(--line);margin-bottom:28px}.chartHead{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:12px}.chartHead h3{font-size:13px;margin:0}.chartHead span{font-size:11px;color:var(--muted)}.chart{height:230px;background:linear-gradient(to bottom,transparent 24%,var(--line) 25%,transparent 25%,transparent 49%,var(--line) 50%,transparent 50%,transparent 74%,var(--line) 75%,transparent 75%)}svg{width:100%;height:100%;overflow:visible}.axisLabels{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:6px}
+.section{margin-bottom:30px}.section h2{font-size:14px;margin:0 0 12px}.section p{font-size:12px;color:var(--muted);margin:0 0 14px}.tableWrap{overflow-x:auto}.tbl{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}.tbl th,.tbl td{text-align:left;padding:9px 12px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}.tbl th{color:var(--muted);font-weight:500}.tbl th.num,.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;padding-right:0}.empty{color:var(--muted);font-size:12px;padding:8px 0}.outside{border-top:1px solid var(--line);padding-top:26px;margin-top:30px}.outsideGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.outsideItem{border-top:1px solid var(--line);padding-top:12px}.outsideItem b{display:block;font-size:20px;font-weight:500}.outsideItem span{font-size:11px;color:var(--muted)}.foot{color:var(--muted);font-size:12px;line-height:1.6;margin-top:28px}
+@media(max-width:1150px){.panels{grid-template-columns:1fr}.brandPanel+.brandPanel{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:34px;margin-top:34px}}
+@media(max-width:820px){.layout{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.sideFoot{display:none}main{padding:24px 18px 50px}.metrics{grid-template-columns:1fr 1fr}.metric:nth-child(3n+1){border-left:1px solid var(--line);padding-left:16px}.metric:nth-child(odd){border-left:0;padding-left:0}.outsideGrid{grid-template-columns:1fr}}
+@media(max-width:520px){.metrics{grid-template-columns:1fr}.metric{border-left:0!important;padding-left:0}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="brand"><b>IFT • Eventos</b><span>Painel de vendas</span></div>
+    <div class="navTitle">Dashboards</div>
+    <a class="navItem" href="/v5/">Eventos Presenciais</a>
+    <a class="navItem active" href="/v5/high-ticket/">High Ticket</a>
+    <div class="sideFoot">Versão compartilhável<br><span id="lastRead">carregando...</span></div>
+  </aside>
+  <main>
+    <div class="head">
+      <h1>High Ticket</h1>
+      <p>IFT e Sistêmico lado a lado, com investimento, leads, vendas, faturamento, entrada em caixa e desempenho comercial.</p>
+    </div>
+
+    <div class="controls">
+      <div class="field"><label>Data inicial</label><input id="from" type="date"></div>
+      <div class="field"><label>Data final</label><input id="to" type="date"></div>
+      <div class="field"><label>Atalhos</label><div class="shortcuts"><button data-range="today">Hoje</button><button data-range="7">7 dias</button><button data-range="30">30 dias</button><button data-range="month">Este mês</button><button data-range="all">Tudo</button></div></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" id="refresh">Atualizar agora</button></div>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="content"><div class="empty">Carregando dados do High Ticket...</div></div>
+  </main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const INT=new Intl.NumberFormat('pt-BR');
+function iso(d){return d.toISOString().slice(0,10)}
+function today(){const d=new Date();d.setHours(12,0,0,0);return iso(d)}
+function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);d.setHours(12,0,0,0);return iso(d)}
+function monthStart(){const d=new Date();return iso(new Date(d.getFullYear(),d.getMonth(),1,12))}
+function formatDate(s){return s?new Date(s+'T12:00:00').toLocaleDateString('pt-BR'):'—'}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+async function getJson(url,opt){const r=await fetch(url,opt);if(!r.ok){let msg='Erro '+r.status;try{const j=await r.json();msg=j.erro||msg}catch{}throw new Error(msg)}return r.json()}
+function setStatus(msg,error=false){const el=$('status');if(!msg){el.className='status';el.textContent='';return}el.className='status show'+(error?' error':'');el.textContent=msg}
+function path(values,w,h,pad){
+  if(!values.length)return '';const max=Math.max(1,...values.map(v=>v.y));
+  return values.map((v,i)=>{const x=pad+(w-pad*2)*(i/Math.max(1,values.length-1));const y=h-pad-(h-pad*2)*(v.y/max);return(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)}).join(' ')
+}
+function chart(series){
+  if(!series?.length)return '<div class="empty">Nenhuma venda no período selecionado.</div>';
+  const w=800,h=210,pad=18;const vals=series.map(p=>({y:p.faturamento||0}));
+  const first=series[0].data.slice(5).split('-').reverse().join('/');
+  const mid=series[Math.floor(series.length/2)].data.slice(5).split('-').reverse().join('/');
+  const last=series[series.length-1].data.slice(5).split('-').reverse().join('/');
+  return '<div class="chart"><svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><path d="'+path(vals,w,h,pad)+'" fill="none" stroke="#c08a4e" stroke-width="3"/></svg></div><div class="axisLabels"><span>'+first+'</span><span>'+mid+'</span><span>'+last+'</span></div>';
+}
+function metric(label,value,note=''){return '<div class="metric"><div class="metricLabel">'+label+'</div><div class="metricValue">'+value+'</div>'+(note?'<div class="metricNote">'+note+'</div>':'')+'</div>'}
+function groupedTable(title,groups,col){
+  if(!groups?.length)return '<section class="section"><h2>'+title+'</h2><div class="empty">Nenhuma venda no período selecionado.</div></section>';
+  const rows=groups.map(g=>'<tr><td>'+escapeHtml(g.chave||'—')+'</td><td class="num">'+INT.format(g.vendas||0)+'</td><td class="num">'+BRL.format(g.entrada||0)+'</td><td class="num">'+BRL.format(g.total||0)+'</td></tr>').join('');
+  return '<section class="section"><h2>'+title+'</h2><div class="tableWrap"><table class="tbl"><thead><tr><th>'+col+'</th><th class="num">Vendas</th><th class="num">Entrada</th><th class="num">Total</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>';
+}
+function clientsTable(clients){
+  if(!clients?.length)return '<section class="section"><h2>Clientes</h2><p>Quem comprou no período, da venda mais recente para a mais antiga.</p><div class="empty">Nenhuma venda no período selecionado.</div></section>';
+  const rows=clients.map(c=>'<tr><td>'+formatDate(c.data)+'</td><td>'+formatDate(c.dataLead)+'</td><td>'+formatDate(c.dataCall)+'</td><td>'+escapeHtml(c.cliente||'—')+'</td><td>'+escapeHtml(c.funil||'—')+'</td><td>'+escapeHtml(c.formaDePagamento||'—')+'</td><td>'+escapeHtml(c.sdr||'—')+'</td><td>'+escapeHtml(c.mentor||'—')+'</td><td>'+escapeHtml(c.produto||'—')+'</td><td class="num">'+BRL.format(c.total||0)+'</td></tr>').join('');
+  return '<section class="section"><h2>Clientes</h2><p>Quem comprou no período, da venda mais recente para a mais antiga.</p><div class="tableWrap"><table class="tbl"><thead><tr><th>Venda</th><th>Lead</th><th>Call</th><th>Cliente</th><th>Funil</th><th>Pagamento</th><th>SDR</th><th>Mentor</th><th>Produto</th><th class="num">Total</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>';
+}
+function panel(p){
+  return '<div class="brandPanel"><h2 class="brandName">'+escapeHtml(p.label)+'</h2>'+
+    '<div class="metrics">'+
+      metric('Investimento',BRL.format(p.investimento||0))+
+      metric('Leads',INT.format(p.leads||0))+
+      metric('Custo por lead',p.custoPorLead==null?'—':BRL.format(p.custoPorLead),p.custoPorLead==null?'Sem leads no período':'')+
+      metric('Faturamento',BRL.format(p.faturamento||0))+
+      metric('Em caixa',BRL.format(p.emCaixa||0))+
+      metric('Vendas',INT.format(p.vendas||0))+
+    '</div>'+
+    '<section class="chartBox"><div class="chartHead"><h3>Faturamento por dia</h3><span>'+formatDate($('from').value)+' a '+formatDate($('to').value)+'</span></div>'+chart(p.serie||[])+'</section>'+
+    groupedTable('Desempenho — funil de venda',p.porFunil||[],'Funil')+
+    groupedTable('Faturamento por vendedor',p.porVendedor||[],'Vendedor')+
+    groupedTable('Produtos vendidos',p.porProduto||[],'Produto')+
+    clientsTable(p.clientes||[])+
+  '</div>';
+}
+function outsideBlock(nc){
+  const items=[];
+  for(const x of nc?.vendas||[])items.push('<div class="outsideItem"><b>'+INT.format(x.linhas||0)+'</b><span>Vendas com EMPRESA “'+escapeHtml(x.valor)+'”</span></div>');
+  for(const x of nc?.leads||[])items.push('<div class="outsideItem"><b>'+INT.format(x.linhas||0)+'</b><span>Leads com EMPRESA “'+escapeHtml(x.valor)+'”</span></div>');
+  if((nc?.custoSemPainel||0)>0)items.push('<div class="outsideItem"><b>'+BRL.format(nc.custoSemPainel)+'</b><span>Investimento em campanhas fora dos dois painéis</span></div>');
+  if(!items.length)return '';
+  return '<section class="outside"><h2 style="font-size:14px;margin:0 0 5px">Fora dos dois painéis</h2><p style="font-size:12px;color:var(--muted);margin:0 0 14px">Linhas que não foram classificadas como IFT ou Sistêmico.</p><div class="outsideGrid">'+items.join('')+'</div></section>';
+}
+async function refresh(){
+  $('refresh').disabled=true;$('refresh').textContent='Atualizando...';setStatus('');
+  try{
+    const q=new URLSearchParams({from:$('from').value,to:$('to').value});
+    const data=await getJson('/api/high-ticket?'+q.toString());
+    $('lastRead').textContent=data.fetchedAt?'Última leitura: '+new Date(data.fetchedAt).toLocaleString('pt-BR'):'Base carregada';
+    if(data.falhas?.length)setStatus('Falha em uma ou mais fontes: '+data.falhas.join(' • '),true);
+    $('content').innerHTML='<div class="panels">'+(data.paineis||[]).map(panel).join('')+'</div>'+outsideBlock(data.naoClassificado)+'<p class="foot">Período selecionado: '+formatDate($('from').value)+' a '+formatDate($('to').value)+'. Os números vêm das bases do High Ticket já configuradas no dashboard.</p>';
+  }catch(e){setStatus(e.message||String(e),true);$('content').innerHTML='<div class="empty">Não foi possível carregar o High Ticket.</div>'}
+  finally{$('refresh').disabled=false;$('refresh').textContent='Atualizar agora'}
+}
+$('from').value=daysAgo(29);$('to').value=today();
+$('from').addEventListener('change',refresh);$('to').addEventListener('change',refresh);$('refresh').addEventListener('click',refresh);
+document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{const r=b.dataset.range;if(r==='today'){$('from').value=today();$('to').value=today()}else if(r==='7'){$('from').value=daysAgo(6);$('to').value=today()}else if(r==='30'){$('from').value=daysAgo(29);$('to').value=today()}else if(r==='month'){$('from').value=monthStart();$('to').value=today()}else{$('from').value='2026-01-01';$('to').value=today()}refresh()}));
+try{const proto=location.protocol==='https:'?'wss':'ws';const ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=e=>{try{const j=JSON.parse(e.data);if(j.tipo==='dados-atualizados')refresh()}catch{}}}catch{}
+refresh();
+</script>
+</body>
+</html>
