@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eventos Presenciais — IFT</title>
+<style>
+:root{--bg:#14120f;--panel:#1c1916;--panel2:#221e1a;--text:#edeae4;--muted:#9c958a;--line:#2a2621;--line2:#3a352e;--accent:#c08a4e;--green:#6fa287;--red:#b5564b}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{font-size:14px}.layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.side{border-right:1px solid var(--line);padding:26px 0 22px;position:sticky;top:0;height:100vh}.brand{padding:0 22px 26px}.brand b{display:block;font-size:15px}.brand span{color:var(--muted);font-size:12px}.navTitle{color:var(--muted);font-size:12px;padding:0 22px 8px}.navItem{padding:11px 22px;color:var(--muted);border-left:2px solid transparent}.navItem.active{color:var(--accent);background:var(--panel);border-left-color:var(--accent)}.sideFoot{position:absolute;bottom:22px;left:22px;color:var(--muted);font-size:12px;line-height:1.5}
+main{padding:30px 34px 60px;max-width:1500px}.head h1{font-size:21px;margin:0}.head p{color:var(--muted);font-size:13px;margin:5px 0 24px}
+.controls{display:grid;grid-template-columns:minmax(280px,1.5fr) 160px 160px minmax(340px,1.3fr) 140px 170px;gap:14px;align-items:end;padding:18px 0 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:28px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}.field select,.field input{width:100%;height:42px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:4px;padding:0 11px;font:inherit}.shortcuts{display:flex;gap:6px;flex-wrap:wrap}.shortcuts button,.btn{height:42px;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:4px;padding:0 12px;cursor:pointer;font:inherit}.shortcuts button:hover,.btn:hover{background:var(--panel2);border-color:var(--line2)}.btn{font-weight:650}.status{margin-bottom:18px;padding:12px 14px;background:var(--panel);border-left:2px solid var(--accent);color:var(--muted);font-size:12px;line-height:1.5;display:none}.status.show{display:block}.status.error{border-left-color:var(--red)}
+.hero{padding:2px 0 24px;border-bottom:1px solid var(--line)}.heroLabel{color:var(--muted);font-size:13px}.heroValue{font-size:64px;line-height:1;font-weight:700;color:var(--accent);margin:10px 0}.heroNote{color:var(--muted);font-size:13px}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line);margin-bottom:34px}.metric{padding:20px;border-left:1px solid var(--line);min-height:126px}.metric:first-child{border-left:0;padding-left:0}.metricLabel{font-size:12px;color:var(--muted)}.metricValue{font-size:28px;margin-top:8px;font-variant-numeric:tabular-nums}.metricNote{font-size:12px;color:var(--muted);margin-top:5px}.metricValue.red{color:var(--red)}.metricValue.green{color:var(--green)}
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:42px;margin-bottom:34px}.section h2{font-size:14px;margin:0 0 2px}.section p{font-size:12px;color:var(--muted);margin:0 0 16px}.ticketGrid{display:grid;grid-template-columns:repeat(3,1fr)}.ticket{padding:15px 16px;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:102px}.ticket:nth-child(3n+1){border-left:0;padding-left:0}.ticket .q{font-size:24px}.ticket .n{font-size:12px;color:var(--muted);margin-top:4px}.ticket .r{font-size:12px;color:var(--muted);margin-top:7px}
+.ambGrid{display:grid;grid-template-columns:repeat(3,1fr)}.amb{padding:15px 16px;border-top:1px solid var(--line);border-left:1px solid var(--line)}.amb:first-child{border-left:0;padding-left:0}.amb .q{font-size:24px}.amb .n{font-size:12px;color:var(--muted);margin-top:4px}.ambNote{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.45}
+.chartBox{border-top:1px solid var(--line);padding-top:22px}.chartHead{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:14px}.chartHead h3{font-size:14px;margin:0}.chartHead span{font-size:12px;color:var(--muted)}.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.chart{height:310px;position:relative;background:linear-gradient(to bottom,transparent 24%,var(--line) 25%,transparent 25%,transparent 49%,var(--line) 50%,transparent 50%,transparent 74%,var(--line) 75%,transparent 75%)}svg{width:100%;height:100%;overflow:visible}.axisLabels{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:6px}
+.foot{color:var(--muted);font-size:12px;line-height:1.6;margin-top:26px}
+.loading{padding:60px 0;color:var(--muted)}
+@media(max-width:1250px){.controls{grid-template-columns:repeat(3,1fr)}.metrics{grid-template-columns:repeat(3,1fr)}.metric:nth-child(4){border-left:0}.grid2{grid-template-columns:1fr}}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.sideFoot{display:none}.controls{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}.metric:nth-child(odd){border-left:0}.metric:nth-child(4){border-left:1px solid var(--line)}main{padding:24px 18px 50px}.ticketGrid{grid-template-columns:1fr 1fr}.ticket:nth-child(3n+1){border-left:1px solid var(--line);padding-left:16px}.ticket:nth-child(odd){border-left:0;padding-left:0}}
+@media(max-width:520px){.controls{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.metric{border-left:0!important;padding-left:0}.ticketGrid,.ambGrid{grid-template-columns:1fr}.ticket,.amb{border-left:0!important;padding-left:0}.heroValue{font-size:52px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="brand"><b>IFT • Eventos</b><span>Painel de vendas</span></div>
+    <div class="navTitle">Dashboards</div>
+    <div class="navItem active">Eventos Presenciais</div>
+    <div class="navItem">High Ticket</div>
+    <div class="sideFoot">Versão compartilhável<br><span id="lastRead">carregando...</span></div>
+  </aside>
+  <main>
+    <div class="head">
+      <h1>Eventos Presenciais</h1>
+      <p>Vendas, leads, investimento, ingressos, embaixadores e acompanhamento da meta por evento.</p>
+    </div>
+
+    <div class="controls">
+      <div class="field"><label>Evento</label><select id="eventSelect"></select></div>
+      <div class="field"><label>Data inicial</label><input id="from" type="date"></div>
+      <div class="field"><label>Data final</label><input id="to" type="date"></div>
+      <div class="field"><label>Atalhos</label><div class="shortcuts"><button data-range="today">Hoje</button><button data-range="7">7 dias</button><button data-range="30">30 dias</button><button data-range="month">Este mês</button><button data-range="all">Tudo</button></div></div>
+      <div class="field"><label>Meta</label><input id="goal" type="number" min="0" step="1" value="60"></div>
+      <div class="field"><label>Data do evento</label><input id="eventDate" type="date"></div>
+    </div>
+
+    <div class="controls" style="grid-template-columns:220px 1fr;margin-top:-16px;padding-top:0;border-top:0">
+      <div class="field"><label>Investido (c/ imposto)</label><input id="manualInvested" inputmode="decimal" placeholder="0,00"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" id="refresh">Atualizar agora</button></div>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="content" class="loading">Carregando dados...</div>
+  </main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const INT=new Intl.NumberFormat('pt-BR');
+const KEY='ift.dashboard.shareable.v5';
+let state=null, currentMetrics=null;
+
+function iso(d){return d.toISOString().slice(0,10)}
+function today(){const d=new Date(); d.setHours(12,0,0,0); return iso(d)}
+function daysAgo(n){const d=new Date(); d.setDate(d.getDate()-n); d.setHours(12,0,0,0); return iso(d)}
+function monthStart(){const d=new Date(); return iso(new Date(d.getFullYear(),d.getMonth(),1,12))}
+function moneyInputToNumber(v){const s=String(v||'').trim().replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,'');const n=Number(s);return Number.isFinite(n)?n:0}
+function formatInputMoney(v){return moneyInputToNumber(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function saved(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return {}}}
+function save(patch){localStorage.setItem(KEY,JSON.stringify({...saved(),...patch}))}
+
+async function getJson(url,opt){const r=await fetch(url,opt);if(!r.ok){let msg='Erro '+r.status;try{const j=await r.json();msg=j.erro||msg}catch{}throw new Error(msg)}return r.json()}
+
+function defaultManual(label){
+  if(/ânima|anima/i.test(label||'')) return {goal:60,eventDate:'2026-09-26',invested:'7938,92'};
+  return {goal:60,eventDate:'',invested:'0,00'};
+}
+function selectedLabel(){return $('eventSelect').selectedOptions[0]?.textContent||''}
+function configKey(){return $('eventSelect').value||'linha:todos'}
+function loadManual(){
+  const all=saved(); const k=configKey(); const def=defaultManual(selectedLabel()); const c={...def,...(all[k]||{})};
+  $('goal').value=c.goal??60; $('eventDate').value=c.eventDate||''; $('manualInvested').value=formatInputMoney(c.invested||0);
+}
+function saveManual(){
+  const all=saved(); const k=configKey();
+  all[k]={goal:Number($('goal').value||0),eventDate:$('eventDate').value,invested:$('manualInvested').value};
+  localStorage.setItem(KEY,JSON.stringify(all));
+}
+
+function buildEventOptions(){
+  const sel=$('eventSelect'); sel.innerHTML='<option value="linha:todos">Todos os eventos</option>';
+  let currentValue='linha:todos';
+  for(const line of state.eventLines){
+    const group=document.createElement('optgroup'); group.label=line.label;
+    const all=document.createElement('option'); all.value='linha:'+line.id; all.textContent=line.label+' — todas as edições'; group.appendChild(all);
+    for(const ed of line.editions){
+      const o=document.createElement('option'); o.value='ed:'+ed.id; o.textContent=ed.label; group.appendChild(o);
+      if(ed.current && /ânima|anima/i.test(ed.label)) currentValue=o.value;
+    }
+    sel.appendChild(group);
+  }
+  const persisted=saved().selectedEvent;
+  sel.value=[...sel.options].some(o=>o.value===persisted)?persisted:currentValue;
+}
+
+function metricParams(){
+  const value=$('eventSelect').value;
+  const edition=value.startsWith('ed:')?value.slice(3):'';
+  const line=edition?'todos':value.replace(/^linha:/,'');
+  const q=new URLSearchParams({line,from:$('from').value,to:$('to').value});
+  if(edition) q.set('edition',edition);
+  return q;
+}
+
+function setStatus(msg,error=false){const el=$('status');if(!msg){el.className='status';el.textContent='';return}el.className='status show'+(error?' error':'');el.textContent=msg}
+
+async function refresh(){
+  $('refresh').disabled=true;$('refresh').textContent='Atualizando...';setStatus('');
+  try{
+    const data=await getJson('/api/metrics?'+metricParams().toString());
+    currentMetrics=data;
+    $('lastRead').textContent='Última leitura: '+new Date(data.fetchedAt).toLocaleString('pt-BR');
+    if(data.falhas?.length) setStatus('Falha ao ler uma ou mais fontes: '+data.falhas.join(' • '),true);
+    else if(data.warnings?.length) setStatus(data.warnings.join(' • '));
+    render(data.metrics);
+  }catch(e){$('content').innerHTML='<div class="loading">Não foi possível carregar os dados.</div>';setStatus(e.message||String(e),true)}
+  finally{$('refresh').disabled=false;$('refresh').textContent='Atualizar agora'}
+}
+
+function daysUntil(date){
+  if(!date)return null;const d=new Date(date+'T12:00:00');const n=new Date();n.setHours(12,0,0,0);return Math.ceil((d-n)/86400000)
+}
+function linePath(values,w,h,pad){
+  if(!values.length)return '';const max=Math.max(1,...values.map(v=>v.y));
+  return values.map((v,i)=>{const x=pad+(w-pad*2)*(i/(Math.max(1,values.length-1)));const y=h-pad-(h-pad*2)*(v.y/max);return (i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)}).join(' ')
+}
+function renderChart(series){
+  if(!series?.length)return '<div class="loading">Sem série diária para o período.</div>';
+  const w=1000,h=280,pad=20; const vendas=series.map((p,i)=>({i,y:p.vendas||0})); const leads=series.map((p,i)=>({i,y:p.leads||0}));
+  const labelA=series[0].date.slice(5).split('-').reverse().join('/'); const labelB=series[Math.floor(series.length/2)].date.slice(5).split('-').reverse().join('/'); const labelC=series[series.length-1].dateFim.slice(5).split('-').reverse().join('/');
+  return '<div class="chart"><svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><path d="'+linePath(leads,w,h,pad)+'" fill="none" stroke="#777168" stroke-width="2"/><path d="'+linePath(vendas,w,h,pad)+'" fill="none" stroke="#c08a4e" stroke-width="3"/></svg></div><div class="axisLabels"><span>'+labelA+'</span><span>'+labelB+'</span><span>'+labelC+'</span></div>';
+}
+function render(m){
+  const goal=Number($('goal').value||0);
+  const manualInvest=moneyInputToNumber($('manualInvested').value);
+  const invested=manualInvest>0?manualInvest:(m.custoCampanha||0);
+  const sales=(m.ingressos||[]).reduce((s,x)=>s+(x.quantidade||0),0);
+  const leads=m.leadsTotal||0;
+  const amb=m.embaixador?.embaixadores||0;
+  const guests=m.embaixador?.convidados||0;
+  const total=amb+guests+sales;
+  const remain=goal-sales;
+  const dias=daysUntil($('eventDate').value);
+  const hero=dias===null?'—':dias===0?'Hoje':Math.abs(dias);
+  const heroNote=dias===null?'Preencha a data do evento para calcular.':dias>0?'Faltam '+dias+' dias para o evento.':dias===0?'O evento é hoje.':'O evento aconteceu há '+Math.abs(dias)+' dias.';
+  const remainClass=remain<=0?'green':'red';
+  const ticketHtml=(m.ingressos||[]).map(x=>'<div class="ticket"><div class="q">'+INT.format(x.quantidade||0)+'</div><div class="n">'+escapeHtml(x.label)+'</div><div class="r">'+((x.faturamento||0)>0?BRL.format(x.faturamento):'—')+'</div></div>').join('');
+  $('content').className='';
+  $('content').innerHTML=
+  '<section class="hero"><div class="heroLabel">Dias até o evento</div><div class="heroValue">'+hero+'</div><div class="heroNote">'+heroNote+'</div></section>'+
+  '<section class="metrics">'+
+    metric('Investido (c/ imposto)',BRL.format(invested),manualInvest>0?'valor manual; depois será alimentado pela Meta':'valor disponível na base atual')+
+    metric('Leads gerados',m.leadsSemFonte?'—':INT.format(leads),m.leadsSemFonte?'sem fonte de leads mapeada':'')+
+    metric('Vendas',INT.format(sales),'Meta: '+INT.format(goal))+
+    metric('Faltam para a meta',INT.format(remain),remain<=0?'Meta batida':'meta − vendas',remainClass)+
+    metric('Embaixadores',INT.format(amb),'pessoas únicas no período')+
+    metric('Convidados',INT.format(guests),'convites gratuitos')+
+    metric('Total de participantes',INT.format(total),'embaixadores + convidados + vendas')+
+  '</section>'+
+  '<div class="grid2"><section class="section"><h2>Tipos de ingresso</h2><p>Quantidade vendida e o quanto cada tipo faturou.</p><div class="ticketGrid">'+(ticketHtml||'<div class="ambNote">Sem ingressos no período.</div>')+'</div></section>'+
+  '<section class="section"><h2>Embaixadores</h2><p>Convites gratuitos — não entram no faturamento.</p><div class="ambGrid"><div class="amb"><div class="q">'+INT.format(amb)+'</div><div class="n">Embaixadores</div></div><div class="amb"><div class="q">'+INT.format(guests)+'</div><div class="n">Convidados</div></div><div class="amb"><div class="q">'+INT.format(amb+guests)+'</div><div class="n">Total</div></div></div><div class="ambNote">'+ambassadorNote(m)+'</div></section></div>'+
+  '<section class="chartBox"><div class="chartHead"><div><h3>Leads e vendas por dia</h3><span>Janela selecionada: '+formatDate($('from').value)+' a '+formatDate($('to').value)+'</span></div><div class="legend"><span><i style="background:#c08a4e"></i>Vendas</span><span><i style="background:#777168"></i>Leads</span></div></div>'+renderChart(m.serie||[])+'</section>'+
+  '<p class="foot">Meta, investimento manual e data do evento ficam salvos neste navegador por evento. Os demais números vêm da base do dashboard para o evento e período selecionados. Quando a integração da Meta for conectada, o campo de investimento pode ser substituído pela alimentação automática.</p>';
+}
+function metric(label,value,note='',cls=''){return '<div class="metric"><div class="metricLabel">'+label+'</div><div class="metricValue '+cls+'">'+value+'</div>'+(note?'<div class="metricNote">'+note+'</div>':'')+'</div>'}
+function ambassadorNote(m){if((m.embaixador?.total||0)>0)return 'Contagem de embaixadores e convidados registrada na lista de participantes.';if((m.embaixador?.noHistorico||0)>0)return 'Nenhum convite nesta janela; existem registros em outras datas.';return 'Este evento ainda não aparece com convites na lista de participantes presenciais.'}
+function formatDate(s){if(!s)return '—';return new Date(s+'T12:00:00').toLocaleDateString('pt-BR')}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+async function init(){
+  $('from').value=daysAgo(29);$('to').value=today();
+  try{
+    state=await getJson('/api/state');
+    buildEventOptions();loadManual();
+    $('lastRead').textContent=state.fetchedAt?'Última leitura: '+new Date(state.fetchedAt).toLocaleString('pt-BR'):'Base carregada';
+    await refresh();
+  }catch(e){setStatus(e.message||String(e),true);$('content').innerHTML='<div class="loading">Não foi possível iniciar o painel.</div>'}
+}
+$('eventSelect').addEventListener('change',()=>{save({...saved(),selectedEvent:$('eventSelect').value});loadManual();refresh()});
+$('from').addEventListener('change',refresh);$('to').addEventListener('change',refresh);
+$('goal').addEventListener('input',()=>{saveManual();if(currentMetrics)render(currentMetrics.metrics)});
+$('eventDate').addEventListener('change',()=>{saveManual();if(currentMetrics)render(currentMetrics.metrics)});
+$('manualInvested').addEventListener('change',()=>{$('manualInvested').value=formatInputMoney($('manualInvested').value);saveManual();if(currentMetrics)render(currentMetrics.metrics)});
+$('refresh').addEventListener('click',refresh);
+document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{const r=b.dataset.range;if(r==='today'){$('from').value=today();$('to').value=today()}else if(r==='7'){$('from').value=daysAgo(6);$('to').value=today()}else if(r==='30'){$('from').value=daysAgo(29);$('to').value=today()}else if(r==='month'){$('from').value=monthStart();$('to').value=today()}else{$('from').value='2026-01-01';$('to').value=today()}refresh()}));
+try{const proto=location.protocol==='https:'?'wss':'ws';const ws=new WebSocket(proto+'://'+location.host+'/ws');ws.onmessage=e=>{try{const j=JSON.parse(e.data);if(j.tipo==='dados-atualizados')refresh()}catch{}}}catch{}
+init();
+</script>
+</body>
+</html>
