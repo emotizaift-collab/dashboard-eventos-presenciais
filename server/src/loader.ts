@@ -230,6 +230,16 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
       }));
   }
 
+  const embaixadoresReconhecidos = ambassadors.filter((row) => row.lineId !== null);
+  const porLinha = new Map<string, number>();
+  for (const row of embaixadoresReconhecidos) {
+    porLinha.set(row.lineId as string, (porLinha.get(row.lineId as string) ?? 0) + 1);
+  }
+  console.log(
+    `[loader] embaixadores: ${ambassadors.length} linha(s), ${embaixadoresReconhecidos.length} reconhecida(s), ` +
+      [...porLinha.entries()].map(([linha, total]) => `${linha}=${total}`).join(', '),
+  );
+
   return { leads, buyers, traffic, ambassadors, fetchedAt: new Date().toISOString(), warnings, falhas };
 }
 
