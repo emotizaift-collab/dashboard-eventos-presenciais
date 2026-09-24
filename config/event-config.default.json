@@ -39,7 +39,7 @@
       "headerRow": 1,
       "columns": {
         "date": "auto:DATA DA VENDA",
-        "event": "auto:EVENTO",
+        "event": "C",
         "ambassador": "auto:EMBAIXADOR"
       }
     }
