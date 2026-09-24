@@ -75,6 +75,13 @@ function migrarConfigSalva(config: AppConfig): AppConfig {
     config.sources.ambassadors = padrao.sources.ambassadors;
   }
 
+  // Na aba LISTA DE PARTICIPANTES PRESENCIAL, o evento fica na coluna C.
+  // O cabecalho dessa coluna esta vazio na planilha, entao "auto:EVENTO"
+  // nunca encontra nada e todos os embaixadores ficam sem evento associado.
+  if (config.sources.ambassadors) {
+    config.sources.ambassadors.columns.event = 'C';
+  }
+
   const chaveAlias = (alias: AliasConfig): string =>
     nomeDoApelido(alias).trim().toLocaleLowerCase('pt-BR');
 
