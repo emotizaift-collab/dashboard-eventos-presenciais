@@ -42,12 +42,67 @@ export function loadDefaultConfig(): AppConfig {
 export function loadConfig(): AppConfig {
   if (fs.existsSync(OVERRIDE_PATH)) {
     try {
-      return validateConfig(readJson(OVERRIDE_PATH));
+      // O arquivo salvo pode ter sido criado por uma versao antiga do painel.
+      // Aplicamos migracoes pontuais antes de validar para que novas fontes e
+      // correcoes de mapeamento nao fiquem presas somente no JSON padrao.
+      return validateConfig(migrarConfigSalva(readJson(OVERRIDE_PATH)));
     } catch (error) {
       console.error('[config] arquivo salvo invalido, usando o padrao:', error);
     }
   }
   return validateConfig(loadDefaultConfig());
+}
+
+
+/**
+ * Compatibilidade com configuracoes salvas por versoes anteriores.
+ *
+ * O Render pode manter data/event-config.json entre deploys. Isso significa que
+ * uma correcao feita em config/event-config.default.json nao chega sozinha a
+ * quem ja tinha aberto/salvo a tela de Configuracao.
+ *
+ * Duas mudancas sao criticas para os embaixadores:
+ *  1. a fonte dedicada "LISTA DE PARTICIPANTES PRESENCIAL";
+ *  2. "DAY TRAINING SIST" pertence ao ANIMA Day, e nao ao Dinamicas Sistemicas.
+ *
+ * Esta migracao e intencionalmente estreita: preserva todo o resto que a equipe
+ * editou manualmente e apenas garante essas duas regras confirmadas na base.
+ */
+function migrarConfigSalva(config: AppConfig): AppConfig {
+  const padrao = loadDefaultConfig();
+
+  if (!config.sources.ambassadors && padrao.sources.ambassadors) {
+    config.sources.ambassadors = padrao.sources.ambassadors;
+  }
+
+  const chaveAlias = (alias: AliasConfig): string =>
+    nomeDoApelido(alias).trim().toLocaleLowerCase('pt-BR');
+
+  const ALIAS_ANIMA = 'day training sist';
+  let anima:
+    | AppConfig['eventLines'][number]['editions'][number]
+    | undefined;
+
+  for (const linha of config.eventLines) {
+    for (const edicao of linha.editions) {
+      if (edicao.id === 'anima-ed-01') {
+        anima = edicao;
+        continue;
+      }
+      edicao.aliases = (edicao.aliases ?? []).filter(
+        (alias) => chaveAlias(alias) !== ALIAS_ANIMA,
+      );
+    }
+  }
+
+  if (anima) {
+    anima.aliases = anima.aliases ?? [];
+    if (!anima.aliases.some((alias) => chaveAlias(alias) === ALIAS_ANIMA)) {
+      anima.aliases.push('Day Training Sist');
+    }
+  }
+
+  return config;
 }
 
 export function saveConfig(config: AppConfig): AppConfig {
