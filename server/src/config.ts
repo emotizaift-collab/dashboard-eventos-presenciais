@@ -109,10 +109,13 @@ function migrarConfigSalva(config: AppConfig): AppConfig {
   }
 
   if (anima) {
-    anima.aliases = anima.aliases ?? [];
-    if (!anima.aliases.some((alias) => chaveAlias(alias) === ALIAS_ANIMA)) {
-      anima.aliases.push('Day Training Sist');
-    }
+    anima.aliases = (anima.aliases ?? []).filter(
+      (alias) => chaveAlias(alias) !== ALIAS_ANIMA,
+    );
+    anima.aliases.push({
+      nome: 'Day Training Sist',
+      vigencia: { de: '2026-09-04' },
+    });
   }
 
   return config;
