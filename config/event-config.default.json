@@ -91,7 +91,7 @@
       "id": "vip",
       "label": "VIP",
       "cadeiras": 1,
-      "preco": 297.0,
+      "preco": 297,
       "contaComoVenda": true,
       "aliases": [
         "vip",
@@ -110,7 +110,7 @@
       "id": "vip-duplo",
       "label": "VIP duplo",
       "cadeiras": 2,
-      "preco": 594.0,
+      "preco": 594,
       "contaComoVenda": true,
       "aliases": [
         "vip duplo",
@@ -126,7 +126,7 @@
       "id": "vip-triplo",
       "label": "VIP triplo",
       "cadeiras": 3,
-      "preco": 891.0,
+      "preco": 891,
       "contaComoVenda": true,
       "aliases": [
         "vip triplo",
@@ -141,7 +141,7 @@
       "id": "cortesia",
       "label": "Convite embaixador",
       "cadeiras": 0,
-      "preco": 0.0,
+      "preco": 0,
       "contaComoVenda": false,
       "aliases": [
         "convite embaixador",
@@ -154,7 +154,7 @@
       "id": "acompanhante",
       "label": "Acompanhante (2ª pessoa do duplo)",
       "cadeiras": 0,
-      "preco": 0.0,
+      "preco": 0,
       "contaComoVenda": false,
       "aliases": [
         "cad",
@@ -473,5 +473,16 @@
         ]
       }
     ]
-  }
+  },
+  "transferencias": [
+    {
+      "lineId": "dai",
+      "editionId": "dai-ed-01",
+      "date": "2026-09-23",
+      "ticketKind": "duplo",
+      "quantidade": 1,
+      "faturamento": 0,
+      "observacao": "Ana Mirian Foresto Marques — compra da #05 Formação de Palestrantes transferida para o DAI atual; conta 1 ingresso duplo / 2 participantes, sem duplicar receita."
+    }
+  ]
 }
