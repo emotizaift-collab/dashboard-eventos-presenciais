@@ -151,6 +151,24 @@ export interface EventLine {
   compartilhadoCom?: string[];
 }
 
+export interface TransferenciaIngresso {
+  /** Linha/edicao que recebe a pessoa nesta nova participacao. */
+  lineId: string;
+  editionId: string;
+  /** Data em que a transferencia passa a contar no evento de destino. */
+  date: string;
+  /** Tipo de ingresso operacional no evento de destino. */
+  ticketKind: TicketKind;
+  /** Quantas compras deste tipo entram no destino. Normalmente 1. */
+  quantidade?: number;
+  /**
+   * Receita a atribuir ao evento de destino. Para transferencia entre edicoes,
+   * deve ser 0 para nao duplicar faturamento ja reconhecido na compra original.
+   */
+  faturamento?: number;
+  observacao?: string;
+}
+
 export interface AppConfig {
   ticketPrice: number;
   /**
@@ -199,6 +217,12 @@ export interface AppConfig {
    * lido, e ai o problema de verdade passa junto.
    */
   campanhasIgnoradas?: string[];
+  /**
+   * Pessoas reaproveitadas/transferidas de outra edicao. Contam na ocupacao e
+   * no tipo de ingresso do evento de destino, mas podem ter faturamento 0 para
+   * preservar a receita na edicao em que a compra aconteceu.
+   */
+  transferencias?: TransferenciaIngresso[];
   ticketTypes: TicketTypeConfig[];
   eventLines: EventLine[];
   /** A secao High Ticket. Ausente quando o painel roda so com os eventos. */
