@@ -308,7 +308,13 @@ export function App() {
           )}
 
           {dados ? (
-            <Painel dados={dados} />
+            <Painel
+              dados={dados}
+              selecao={selecao}
+              linhaSelecionada={edicao ? (estado.eventLines.find((item) => item.editions.some((ed) => ed.id === edicao))?.id ?? '') : linha}
+              campanhas={campanhas}
+              campanhasSelecionadas={campanhasSel}
+            />
           ) : (
             <div className="carregando">Calculando as métricas...</div>
           )}
