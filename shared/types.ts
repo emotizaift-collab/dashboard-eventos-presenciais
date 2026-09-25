@@ -351,6 +351,8 @@ export interface Metrics {
    */
   fonteCompartilhada: { rotulo: string; leads: number; custo: number } | null;
   participantes: number;
+  participantesPagantes: number;
+  valorParticipantesPagantes: number;
   custoPorLead: number | null;
   /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */
   ingressos: Array<{
