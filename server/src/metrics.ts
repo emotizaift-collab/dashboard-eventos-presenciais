@@ -121,6 +121,19 @@ export function computeMetrics(
   );
   const buyers = buyersOfEvent.filter((row) => inRange(row.date, filter.from, filter.to));
 
+  // Transferencia entre edicoes nao e uma nova cobranca: ela ocupa cadeira e
+  // precisa aparecer no tipo de ingresso do evento de destino, mas a receita
+  // permanece na compra original. No total geral de todos os eventos, nao
+  // reaplicamos transferencias para evitar contar a mesma compra duas vezes.
+  const transferencias = filter.lineId === 'todos' && !filter.editionId
+    ? []
+    : (config.transferencias ?? []).filter(
+        (item) =>
+          matchesFilter(filter, item.lineId, item.editionId, aceitas) &&
+          noEscopoDasCampanhas(item.lineId) &&
+          inRange(item.date, filter.from, filter.to),
+      );
+
   // Apontar as linhas: sem elas o aviso obriga a procurar a agulha no palheiro.
   const semData = buyersOfEvent.filter((row) => !row.date);
   if (semData.length > 0) {
@@ -186,6 +199,21 @@ export function computeMetrics(
     somaPorTipo.set(row.ticketKind, (somaPorTipo.get(row.ticketKind) ?? 0) + valorDaLinha);
   }
 
+  for (const transferencia of transferencias) {
+    const quantidade = Math.max(1, Math.trunc(transferencia.quantidade ?? 1));
+    const tipo = tiposPorId.get(transferencia.ticketKind);
+    if (!tipo || !tipo.contaComoVenda) continue;
+    contagem.set(
+      transferencia.ticketKind,
+      (contagem.get(transferencia.ticketKind) ?? 0) + quantidade,
+    );
+    somaPorTipo.set(
+      transferencia.ticketKind,
+      (somaPorTipo.get(transferencia.ticketKind) ?? 0) +
+        (transferencia.faturamento ?? 0),
+    );
+  }
+
   if (linhasSemValor > 0) {
     warnings.push(
       `${linhasSemValor} venda(s) estao sem valor preenchido na planilha, entao entraram pelo preco de ` +
@@ -231,9 +259,18 @@ export function computeMetrics(
   // Cada ingresso que leva mais de uma pessoa gera acompanhante: o duplo pede 1
   // nome, o triplo pede 2. A equipe preenche isso a mao, ligando para o
   // comprador, entao a diferenca aponta quantos telefonemas ainda faltam.
-  const acompanhantes = config.ticketTypes
+  let acompanhantes = config.ticketTypes
     .filter((tipo) => !tipo.contaComoVenda && tipo.cadeiras === 0 && ehAcompanhante(tipo.id))
     .reduce((total, tipo) => total + (contagem.get(tipo.id) ?? 0), 0);
+  // Nas transferencias, o acompanhante ja foi confirmado na lista de
+  // participantes da nova edicao. Considera-lo aqui evita um falso alerta de
+  // "acompanhante faltando" causado pelo fato de a compra original estar em
+  // outra edicao.
+  acompanhantes += transferencias.reduce((total, item) => {
+    const tipo = tiposPorId.get(item.ticketKind);
+    const quantidade = Math.max(1, Math.trunc(item.quantidade ?? 1));
+    return total + (tipo && tipo.cadeiras > 1 ? quantidade * (tipo.cadeiras - 1) : 0);
+  }, 0);
   const acompanhantesEsperados = config.ticketTypes
     .filter((tipo) => tipo.contaComoVenda && tipo.cadeiras > 1)
     .reduce((total, tipo) => total + (contagem.get(tipo.id) ?? 0) * (tipo.cadeiras - 1), 0);
@@ -348,7 +385,7 @@ export function computeMetrics(
         total: embaixadores + convidados,
         noHistorico: convitesNoHistorico,
       },
-      serie: buildSeries(config, filter, leads, buyers, traffic),
+      serie: buildSeries(config, filter, leads, buyers, traffic, transferencias),
       naoClassificado: collectUnmatched(data),
     },
     warnings,
@@ -362,6 +399,7 @@ function buildSeries(
   leads: DataSet['leads'],
   buyers: DataSet['buyers'],
   traffic: DataSet['traffic'],
+  transferencias: NonNullable<AppConfig['transferencias']>,
 ): DailyPoint[] {
   const days = listDays(filter.from, filter.to);
   const leadsByDay = countByDay(leads.map((row) => row.date));
@@ -373,6 +411,14 @@ function buildSeries(
   const vendasByDay = countByDay(
     buyers.filter((row) => row.ticketKind !== null && tiposPagos.has(row.ticketKind)).map((row) => row.date),
   );
+  for (const transferencia of transferencias) {
+    if (!transferencia.date || !tiposPagos.has(transferencia.ticketKind)) continue;
+    const quantidade = Math.max(1, Math.trunc(transferencia.quantidade ?? 1));
+    vendasByDay.set(
+      transferencia.date,
+      (vendasByDay.get(transferencia.date) ?? 0) + quantidade,
+    );
+  }
   const custoByDay = new Map<string, number>();
   for (const row of traffic) {
     if (!row.date) continue;
