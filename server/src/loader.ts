@@ -5,6 +5,7 @@ import type {
   BuyerRow,
   DataSet,
   LeadRow,
+  ParticipantRow,
   TrafficRow,
 } from '../../shared/types.js';
 import { extractTags, normalizeText, parseDate, parseMoney, resolveColumnIndex } from './normalize.js';
@@ -181,6 +182,66 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
     }
   }
 
+  // --- Participantes presenciais ---
+  const participants: ParticipantRow[] = [];
+  if (fonteEmbaixadores) {
+    const cabecalho = embaixadoresRaw[fonteEmbaixadores.headerRow - 1] ?? [];
+    const colData = resolveColumnIndex(fonteEmbaixadores.columns.date, cabecalho);
+    const colEvento = resolveColumnIndex(fonteEmbaixadores.columns.event, cabecalho);
+    const colParticipante = 3; // coluna D = NOME
+    const colTipoIngresso = 7; // coluna H = TIPO DE INGRESSO
+
+    let inicioBlocoAtual = -1;
+    let fimBlocoAtual = embaixadoresRaw.length;
+    for (let i = 0; i < embaixadoresRaw.length; i += 1) {
+      const marcador = normalizeText(cell(embaixadoresRaw[i] ?? [], 0));
+      if (marcador.includes('EVENTOS SETEMBRO/OUTUBRO 2026')) {
+        inicioBlocoAtual = i;
+        for (let j = i + 1; j < embaixadoresRaw.length; j += 1) {
+          const proximo = normalizeText(cell(embaixadoresRaw[j] ?? [], 0));
+          if (proximo.startsWith('EVENTOS ')) {
+            fimBlocoAtual = j;
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    for (let i = fonteEmbaixadores.headerRow; i < embaixadoresRaw.length; i += 1) {
+      const row = embaixadoresRaw[i];
+      if (!row) continue;
+      const nome = cell(row, colParticipante);
+      const rawEvent = cell(row, colEvento);
+      const rawTicketType = cell(row, colTipoIngresso);
+      if (!nome || !rawEvent) continue;
+      const date = parseDate(cell(row, colData));
+      let match = matchEdition(matcher, rawEvent, date);
+
+      if (inicioBlocoAtual >= 0 && i > inicioBlocoAtual && i < fimBlocoAtual) {
+        const evento = normalizeText(rawEvent);
+        if (evento === normalizeText('PAI AO VIVO')) {
+          match = { lineId: 'dai', editionId: 'dai-ed-01' };
+        } else if (
+          evento === normalizeText('DAY TRAINING SIST') ||
+          evento.includes(normalizeText('ANIMA DAY TRAINING'))
+        ) {
+          match = { lineId: 'anima', editionId: 'anima-ed-01' };
+        }
+      }
+
+      participants.push({
+        linha: i + 1,
+        date,
+        rawEvent,
+        editionId: match?.editionId ?? null,
+        lineId: match?.lineId ?? null,
+        nome,
+        rawTicketType,
+      });
+    }
+  }
+
   // --- Embaixadores ---
   //
   // Quando ha aba dedicada, os convites vem dela. Ela tem coluna de evento, entao
@@ -240,7 +301,7 @@ export async function fetchDataSet(config: AppConfig): Promise<DataSet> {
       [...porLinha.entries()].map(([linha, total]) => `${linha}=${total}`).join(', '),
   );
 
-  return { leads, buyers, traffic, ambassadors, fetchedAt: new Date().toISOString(), warnings, falhas };
+  return { leads, buyers, traffic, ambassadors, participants, fetchedAt: new Date().toISOString(), warnings, falhas };
 }
 
 async function readTabSafe(
