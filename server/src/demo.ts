@@ -85,6 +85,16 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
     }
   }
 
+  const participants = buyers.map((row) => ({
+    linha: row.linha,
+    date: row.date,
+    rawEvent: row.rawEvent,
+    editionId: row.editionId,
+    lineId: row.lineId,
+    nome: 'Participante',
+    rawTicketType: row.rawTicketType,
+  }));
+
   // No modo demonstracao os convites saem das proprias linhas de venda.
   const ambassadors: AmbassadorRow[] = buyers
     .filter((row) => row.ambassador.trim() !== '')
@@ -102,6 +112,7 @@ export function buildDemoDataSet(config: AppConfig): DataSet {
     buyers,
     traffic,
     ambassadors,
+    participants,
     fetchedAt: new Date().toISOString(),
     falhas: [],
     warnings: [
