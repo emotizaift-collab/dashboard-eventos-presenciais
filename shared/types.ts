@@ -257,6 +257,16 @@ export interface BuyerRow {
 }
 
 /** Uma linha de convite de embaixador. */
+export interface ParticipantRow {
+  linha: number;
+  date: string | null;
+  rawEvent: string;
+  editionId: string | null;
+  lineId: string | null;
+  nome: string;
+  rawTicketType: string;
+}
+
 export interface AmbassadorRow {
   linha: number;
   date: string | null;
@@ -281,6 +291,7 @@ export interface DataSet {
   traffic: TrafficRow[];
   /** Convites de embaixador, da aba dedicada ou deduzidos da aba de vendas. */
   ambassadors: AmbassadorRow[];
+  participants: ParticipantRow[];
   fetchedAt: string;
   warnings: string[];
   /** Falhas de leitura: o painel nao conseguiu abrir a aba. Impedem os numeros de existirem. */
