@@ -248,7 +248,12 @@
                 "de": "2026-09-04"
               }
             },
-            "Day Training Sist"
+            {
+              "nome": "Day Training Sist",
+              "vigencia": {
+                "de": "2026-09-04"
+              }
+            }
           ]
         }
       ]
