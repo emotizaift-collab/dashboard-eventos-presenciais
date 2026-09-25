@@ -2,11 +2,16 @@ import React from 'react';
 import {
   CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import type { Metrics, MetricsResponse } from '../../shared/types';
+import type { CampanhaResumo, Metrics, MetricsResponse } from '../../shared/types';
+import { EventosAnuncios } from './EventosAnuncios';
 import { dinheiro, numero, diaCurto, dataBr } from './format';
 
 interface Props {
   dados: MetricsResponse;
+  selecao: string;
+  linhaSelecionada: string;
+  campanhas: CampanhaResumo[];
+  campanhasSelecionadas: string[];
 }
 
 /**
@@ -25,7 +30,7 @@ const COR_SECUNDARIA = '#6e6a63';
 const COR_EIXO = '#8f8a80';
 const COR_GRADE = '#2a2621';
 
-export function Painel({ dados }: Props) {
+export function Painel({ dados, selecao, linhaSelecionada, campanhas, campanhasSelecionadas }: Props) {
   const m = dados.metrics;
   const agrupado = m.serie.some((ponto) => ponto.date !== ponto.dateFim);
   const serie = m.serie.map((ponto) => ({
@@ -78,6 +83,17 @@ export function Painel({ dados }: Props) {
         />
       </section>
 
+      <section className="participantes-resumo">
+        <div>
+          <h2 className="secao-titulo">Participantes</h2>
+          <p className="secao-sub">O total vem da lista presencial da edição. Pagantes excluem embaixadores, convidados e cortesias.</p>
+        </div>
+        <div className="participantes-grade">
+          <Metrica rotulo="Total de participantes" valor={numero(m.participantes)} />
+          <Metrica rotulo="Participantes pagantes" valor={numero(m.participantesPagantes)} />
+          <Metrica rotulo="Valor pago pelos pagantes" valor={dinheiro(m.valorParticipantesPagantes)} />
+        </div>
+      </section>
       <div className="grade-detalhe">
         <section className="secao">
           <h2 className="secao-titulo">Tipos de ingresso</h2>
@@ -174,6 +190,14 @@ export function Painel({ dados }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </section>
+
+      <EventosAnuncios
+        dados={dados}
+        selecao={selecao}
+        linhaSelecionada={linhaSelecionada}
+        campanhas={campanhas}
+        campanhasSelecionadas={campanhasSelecionadas}
+      />
     </>
   );
 }
