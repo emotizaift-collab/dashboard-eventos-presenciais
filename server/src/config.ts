@@ -82,6 +82,12 @@ function migrarConfigSalva(config: AppConfig): AppConfig {
     config.sources.ambassadors.columns.event = 'C';
   }
 
+  // Transferencias operacionais confirmadas no config padrao tambem precisam
+  // chegar a instalacoes que ja possuem data/event-config.json salvo.
+  if ((!config.transferencias || config.transferencias.length === 0) && padrao.transferencias?.length) {
+    config.transferencias = padrao.transferencias;
+  }
+
   const chaveAlias = (alias: AliasConfig): string =>
     nomeDoApelido(alias).trim().toLocaleLowerCase('pt-BR');
 
