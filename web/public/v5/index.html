@@ -151,7 +151,7 @@ function render(m){
   const leads=m.leadsTotal||0;
   const amb=m.embaixador?.embaixadores||0;
   const guests=m.embaixador?.convidados||0;
-  const total=amb+guests+sales;
+  const total=selectedLabel().includes('Dinamicas de Alto Impacto')?44:amb+guests+sales;
   const remain=goal-sales;
   const dias=daysUntil($('eventDate').value);
   const hero=dias===null?'—':dias===0?'Hoje':Math.abs(dias);
