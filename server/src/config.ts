@@ -118,6 +118,32 @@ function migrarConfigSalva(config: AppConfig): AppConfig {
     });
   }
 
+  // Em 29/09/2026 comecou a segunda edicao do DAI e do ANIMA Day.
+  // O arquivo salvo pode ainda conter aliases sem vigencia, o que faria um
+  // lead novo "DAI" ou "ANIMADAY" continuar caindo na edicao #01. Para esse
+  // corte operacional, as edicoes abaixo seguem exatamente o mapeamento
+  // versionado no padrao, preservando as demais linhas e edicoes customizadas.
+  const edicoesDoCorte = new Set([
+    'dai-ed-01',
+    'dai-nomes-pai',
+    'dai-ed-02',
+    'anima-ed-01',
+    'anima-ed-02',
+  ]);
+
+  for (const linhaPadrao of padrao.eventLines) {
+    const linhaSalva = config.eventLines.find((linha) => linha.id === linhaPadrao.id);
+    if (!linhaSalva) continue;
+
+    for (const edicaoPadrao of linhaPadrao.editions) {
+      if (!edicoesDoCorte.has(edicaoPadrao.id)) continue;
+      const copia = JSON.parse(JSON.stringify(edicaoPadrao)) as typeof edicaoPadrao;
+      const indice = linhaSalva.editions.findIndex((edicao) => edicao.id === edicaoPadrao.id);
+      if (indice >= 0) linhaSalva.editions[indice] = copia;
+      else linhaSalva.editions.push(copia);
+    }
+  }
+
   return config;
 }
 
