@@ -185,12 +185,27 @@
         {
           "id": "dai-ed-01",
           "label": "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata",
-          "current": true,
+          "current": false,
           "aliases": [
             "#01🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata",
-            "DAI",
-            "Dinâmicas de Alto Impacto",
-            "Dinamicas de Alto Impacto"
+            {
+              "nome": "DAI",
+              "vigencia": {
+                "ate": "2026-09-28"
+              }
+            },
+            {
+              "nome": "Dinâmicas de Alto Impacto",
+              "vigencia": {
+                "ate": "2026-09-28"
+              }
+            },
+            {
+              "nome": "Dinamicas de Alto Impacto",
+              "vigencia": {
+                "ate": "2026-09-28"
+              }
+            }
           ]
         },
         {
@@ -206,9 +221,41 @@
             "Palestrante ao Vivo"
           ],
           "vigencia": {
-            "de": "2026-09-04"
+            "de": "2026-09-04",
+            "ate": "2026-09-28"
           },
           "fonteDaLinha": true
+        },
+        {
+          "id": "dai-ed-02",
+          "label": "DAI 2",
+          "current": true,
+          "aliases": [
+            {
+              "nome": "DAI",
+              "vigencia": {
+                "de": "2026-09-29"
+              }
+            },
+            {
+              "nome": "D-A-I",
+              "vigencia": {
+                "de": "2026-09-29"
+              }
+            },
+            {
+              "nome": "Dinâmicas de Alto Impacto",
+              "vigencia": {
+                "de": "2026-09-29"
+              }
+            },
+            {
+              "nome": "Dinamicas de Alto Impacto",
+              "vigencia": {
+                "de": "2026-09-29"
+              }
+            }
+          ]
         }
       ]
     },
@@ -219,39 +266,73 @@
         {
           "id": "anima-ed-01",
           "label": "#01  ÂNIMA Day Training",
-          "current": true,
+          "current": false,
           "aliases": [
             "#01  ÂNIMA Day Training",
-            "ANIMADAY",
-            "ANIMA Day",
+            {
+              "nome": "ANIMADAY",
+              "vigencia": {
+                "ate": "2026-09-28"
+              }
+            },
+            {
+              "nome": "ANIMA Day",
+              "vigencia": {
+                "ate": "2026-09-28"
+              }
+            },
             {
               "nome": "DAY TRAINING",
               "vigencia": {
-                "de": "2026-09-04"
+                "de": "2026-09-04",
+                "ate": "2026-09-28"
               }
             },
             {
               "nome": "Day Training",
               "vigencia": {
-                "de": "2026-09-04"
+                "de": "2026-09-04",
+                "ate": "2026-09-28"
               }
             },
             {
               "nome": "DAYTRAINING",
               "vigencia": {
-                "de": "2026-09-04"
+                "de": "2026-09-04",
+                "ate": "2026-09-28"
               }
             },
             {
               "nome": "DAY TRAININ",
               "vigencia": {
-                "de": "2026-09-04"
+                "de": "2026-09-04",
+                "ate": "2026-09-28"
               }
             },
             {
               "nome": "Day Training Sist",
               "vigencia": {
-                "de": "2026-09-04"
+                "de": "2026-09-04",
+                "ate": "2026-09-28"
+              }
+            }
+          ]
+        },
+        {
+          "id": "anima-ed-02",
+          "label": "Anima Day 2",
+          "current": true,
+          "aliases": [
+            {
+              "nome": "ANIMADAY",
+              "vigencia": {
+                "de": "2026-09-29"
+              }
+            },
+            {
+              "nome": "ANIMA Day",
+              "vigencia": {
+                "de": "2026-09-29"
               }
             }
           ]
