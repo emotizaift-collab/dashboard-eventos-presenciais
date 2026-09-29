@@ -13,9 +13,9 @@ const matcher = compileMatcher(config);
 // O 4o item e a data da linha, obrigatoria nos apelidos que tem vigencia.
 const casos = [
   // Evento A — nome novo
-  ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-ed-01'],
-  ['Dinâmicas de Alto Impacto', 'dai', 'dai-ed-01'],
-  ['DAI', 'dai', 'dai-ed-01'],
+  ['[DAI] [LEADS] [ABO] [F] ALPHA - 04-09', 'dai', 'dai-ed-01', '2026-09-10'],
+  ['Dinâmicas de Alto Impacto', 'dai', 'dai-ed-01', '2026-09-10'],
+  ['DAI', 'dai', 'dai-ed-01', '2026-09-10'],
   // PAI = Palestrante de Alto Impacto. Ate 02/09/2026 essa identidade era do
   // evento "Formacao de Palestrantes" (a aba de vendas chama o mesmo evento de
   // "DAY TRAINING – FORMACAO DE PALESTRANTES"); de 04/09/2026 em diante ela
@@ -29,13 +29,13 @@ const casos = [
   // pela IFT — nao do Dinamicas de Alto Impacto, como dizia a especificacao.
   ['[DINAMICASAOVIVO] [LEADS] [ABO] - 13-08 pg bianca', 'dinamicas-sistemicas', 'ds-nomes-antigos'],
   // Evento B — nome novo
-  ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-ed-01'],
-  ['ANIMA Day', 'anima', 'anima-ed-01'],
+  ['[ANIMADAY] [LEADS] [ABO] - 04-09', 'anima', 'anima-ed-01', '2026-09-10'],
+  ['ANIMA Day', 'anima', 'anima-ed-01', '2026-09-10'],
   // "DAY TRAINING SIST" e como a aba LISTA DE PARTICIPANTES PRESENCIAL escreve o
   // ANIMA Day. Confirmado pela IFT. Eu tinha movido este apelido para o
   // Dinamicas Sistemicas por conta propria, lendo "Sist" como "Sistemicas" — era
   // palpite meu, e estava errado.
-  ['Day Training Sist', 'anima', 'anima-ed-01'],
+  ['Day Training Sist', 'anima', 'anima-ed-01', '2026-09-10'],
 ];
 
 test('reconhece as campanhas e os nomes dos dois eventos', () => {
@@ -45,6 +45,26 @@ test('reconhece as campanhas e os nomes dos dois eventos', () => {
     assert.equal(resultado.lineId, linhaEsperada, `linha errada para: ${texto}`);
     assert.equal(resultado.editionId, edicaoEsperada, `edicao errada para: ${texto}`);
   }
+});
+
+test('vira DAI 2 e Anima Day 2 a partir de 29/09/2026', () => {
+  const casosDoCorte = [
+    ['DAI', '2026-09-28', 'dai-ed-01'],
+    ['DAI', '2026-09-29', 'dai-ed-02'],
+    ['D-A-I', '2026-09-29', 'dai-ed-02'],
+    ['ANIMADAY', '2026-09-28', 'anima-ed-01'],
+    ['ANIMADAY', '2026-09-29', 'anima-ed-02'],
+    ['ANIMA Day', '2026-09-29', 'anima-ed-02'],
+  ];
+
+  for (const [texto, data, edicaoEsperada] of casosDoCorte) {
+    const resultado = matchEdition(matcher, texto, data);
+    assert.ok(resultado, `nao reconheceu: ${texto} em ${data}`);
+    assert.equal(resultado.editionId, edicaoEsperada, `edicao errada para: ${texto} em ${data}`);
+  }
+
+  assert.equal(matchEdition(matcher, 'DAY TRAINING', '2026-09-29'), null);
+  assert.equal(matchEdition(matcher, 'PAI AO VIVO', '2026-09-29'), null);
 });
 
 test('ignora campanhas de outros produtos da empresa', () => {
