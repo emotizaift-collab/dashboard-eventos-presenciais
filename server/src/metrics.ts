@@ -366,13 +366,21 @@ export function computeMetrics(
   const cadeirasVendidas = ingressos.reduce((total, item) => total + item.participantes, 0);
   const participantesCalculados = cadeirasVendidas + embaixadores + convidados;
 
-  const participantesDaLista = data.participants.filter((row) => {
-    if (!matchesFilter(filter, row.lineId, row.editionId, aceitas)) return false;
+  const participantesDaLista = (data.participants ?? []).filter((row) => {
+    // Fonte compartilhada existe para leads/trafego e NAO pode contaminar
+    // participantes de uma edicao especifica. Ao escolher #01/#02/etc.,
+    // participante precisa pertencer exatamente aquela edicao.
+    if (filter.editionId) {
+      if (row.editionId !== filter.editionId) return false;
+    } else if (!matchesFilter(filter, row.lineId, row.editionId, aceitas)) {
+      return false;
+    }
     if (!noEscopoDasCampanhas(row.lineId)) return false;
-    // Ao escolher uma edição, a lista presencial é o roster final daquela
-    // edição e deve incluir transferências mesmo quando a compra original tem
-    // uma data anterior à janela selecionada.
-    return filter.editionId ? true : inRange(row.date, filter.from, filter.to);
+
+    // Participante tambem respeita o periodo pela data da venda. Sem isso,
+    // selecionar uma edicao com 1 venda em 01/10 podia puxar dezenas de nomes
+    // de outras datas da lista presencial.
+    return inRange(row.date, filter.from, filter.to);
   });
 
   const participantesPagantesDaLista = participantesDaLista.filter((row) => {
