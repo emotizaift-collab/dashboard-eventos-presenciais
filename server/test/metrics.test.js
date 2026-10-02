@@ -188,6 +188,50 @@ test('edicao #02 nao herda participantes de outras datas nem da fonte compartilh
   assert.equal(metrics.participantesPagantes, 1);
 });
 
+test('fonte PAI nao infla participantes nem embaixadores da edicao #02', () => {
+  const compraDaEdicao02 = {
+    ...compra('2026-10-01', 'vip', '', 'dai-ed-02'),
+    rawEvent: '#02🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata',
+    rawTicketType: 'INGRESSO VIP',
+    valor: 312.84,
+  };
+  const convitesDaFonte = [
+    'DANILA', 'ALEXANDRE', 'ALEXANDRE', 'LILIAN',
+    'HENRIQUE', 'HENRIQUE', 'HENRIQUE', 'HENRIQUE',
+  ].map((ambassador, index) => ({
+    linha: 500 + index,
+    date: index < 4 ? '2026-09-15' : '2026-09-16',
+    rawEvent: 'PAI AO VIVO',
+    editionId: 'dai-nomes-pai',
+    lineId: 'dai',
+    ambassador,
+  }));
+
+  const dados = {
+    ...dataset,
+    buyers: [compraDaEdicao02],
+    leads: [],
+    traffic: [],
+    participants: [],
+    ambassadors: convitesDaFonte,
+  };
+
+  const { metrics } = computeMetrics(config, dados, {
+    lineId: 'dai',
+    editionId: 'dai-ed-02',
+    from: '2024-01-01',
+    to: '2026-10-02',
+    campanhas: [],
+  });
+
+  assert.equal(qtd(metrics, 'vip'), 1);
+  assert.equal(metrics.embaixador.embaixadores, 0);
+  assert.equal(metrics.embaixador.convidados, 0);
+  assert.equal(metrics.embaixador.total, 0);
+  assert.equal(metrics.participantes, 1);
+  assert.equal(metrics.participantesPagantes, 1);
+});
+
 test('filtrar por edicao separa o nome atual do historico', () => {
   const misto = {
     ...dataset,
