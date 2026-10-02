@@ -47,6 +47,14 @@ test('reconhece as campanhas e os nomes dos dois eventos', () => {
   }
 });
 
+test('produto literal #02 do DAI cai na segunda edicao', () => {
+  const produto = '#02🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata';
+  const resultado = matchEdition(matcher, produto, '2026-10-01');
+  assert.ok(resultado, 'nao reconheceu o produto literal da edicao #02 do DAI');
+  assert.equal(resultado.lineId, 'dai');
+  assert.equal(resultado.editionId, 'dai-ed-02');
+});
+
 test('vira DAI 2 e Anima Day 2 a partir de 29/09/2026', () => {
   const casosDoCorte = [
     ['DAI', '2026-09-28', 'dai-ed-01'],
