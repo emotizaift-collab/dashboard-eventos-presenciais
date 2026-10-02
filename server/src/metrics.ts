@@ -233,12 +233,17 @@ export function computeMetrics(
 
   // Convites vem de data.ambassadors, que o loader monta da aba dedicada ou,
   // na falta dela, das proprias linhas de venda.
-  const comEmbaixador = data.ambassadors.filter(
-    (row) =>
-      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
-      noEscopoDasCampanhas(row.lineId) &&
-      inRange(row.date, filter.from, filter.to),
-  );
+  const comEmbaixador = data.ambassadors.filter((row) => {
+    // Fonte compartilhada serve para leads/trafego, nao para pessoas.
+    // Ao escolher uma edicao especifica, convites e embaixadores precisam
+    // pertencer exatamente a ela; senao a #02 herda pessoas da #01/fonte PAI.
+    if (filter.editionId) {
+      if (row.editionId !== filter.editionId) return false;
+    } else if (!matchesFilter(filter, row.lineId, row.editionId, aceitas)) {
+      return false;
+    }
+    return noEscopoDasCampanhas(row.lineId) && inRange(row.date, filter.from, filter.to);
+  });
   // Cada linha preenchida e um convidado; cada nome distinto e um embaixador.
   // Sao numeros diferentes de proposito: duas linhas de "Alessandra" sao uma
   // embaixadora que levou duas pessoas, e o grupo dela tem tres pessoas.
@@ -250,11 +255,14 @@ export function computeMetrics(
   // Mesmo recorte de evento, sem o recorte de data. E o que permite a tela dizer
   // "nao houve convite neste periodo" em vez de deixar um zero mudo, que parece
   // defeito. Mesma ideia ja usada em leadsSemFonte, logo abaixo.
-  const convitesNoHistorico = data.ambassadors.filter(
-    (row) =>
-      matchesFilter(filter, row.lineId, row.editionId, aceitas) &&
-      noEscopoDasCampanhas(row.lineId),
-  ).length;
+  const convitesNoHistorico = data.ambassadors.filter((row) => {
+    if (filter.editionId) {
+      if (row.editionId !== filter.editionId) return false;
+    } else if (!matchesFilter(filter, row.lineId, row.editionId, aceitas)) {
+      return false;
+    }
+    return noEscopoDasCampanhas(row.lineId);
+  }).length;
 
   // Cada ingresso que leva mais de uma pessoa gera acompanhante: o duplo pede 1
   // nome, o triplo pede 2. A equipe preenche isso a mao, ligando para o
