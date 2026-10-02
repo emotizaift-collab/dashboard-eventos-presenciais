@@ -117,6 +117,34 @@ test('a serie tem um ponto por dia do intervalo, mesmo sem movimento', () => {
   assert.deepEqual(metrics.serie.map((p) => p.vendas), [2, 2, 0]);
 });
 
+test('venda da edicao #02 fica ligada a data de pagamento', () => {
+  const compraDaEdicao02 = {
+    ...compra('2026-10-01', 'vip', '', 'dai-ed-02'),
+    rawEvent: '#02🎤 DAY TRAINING – Dinamicas de Alto Impacto com Professor Massaru Ogata',
+    rawTicketType: 'INGRESSO VIP',
+    valor: 312.84,
+  };
+  const dados = {
+    ...dataset,
+    buyers: [compraDaEdicao02],
+    leads: [],
+    traffic: [],
+    ambassadors: [],
+  };
+  const { metrics } = computeMetrics(config, dados, {
+    lineId: 'dai',
+    editionId: 'dai-ed-02',
+    from: '2026-10-01',
+    to: '2026-10-01',
+    campanhas: [],
+  });
+
+  assert.equal(qtd(metrics, 'vip'), 1);
+  assert.equal(metrics.serie.length, 1);
+  assert.equal(metrics.serie[0].date, '2026-10-01');
+  assert.equal(metrics.serie[0].vendas, 1);
+});
+
 test('filtrar por edicao separa o nome atual do historico', () => {
   const misto = {
     ...dataset,
