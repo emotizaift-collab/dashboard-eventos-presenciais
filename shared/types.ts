@@ -353,6 +353,15 @@ export interface Metrics {
   participantes: number;
   participantesPagantes: number;
   valorParticipantesPagantes: number;
+  /**
+   * Quebra da lista presencial por tipo. Cada linha da lista vale exatamente
+   * uma pessoa, independentemente de o ingresso original ser duplo/triplo.
+   */
+  participantesPorTipo?: Array<{
+    id: string;
+    label: string;
+    quantidade: number;
+  }>;
   custoPorLead: number | null;
   /** Um bloco por tipo de ingresso que conta como venda, na ordem da configuracao. */
   ingressos: Array<{
