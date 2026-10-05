@@ -12,6 +12,7 @@ import type {
 } from '../../shared/types.js';
 import { precoDoTipo } from '../../shared/types.js';
 import { chaveDoEmbaixador } from './normalize.js';
+import { compileMatcher, matchTicketKind } from './matching.js';
 
 /** Tipos que representam a 2a/3a pessoa de um ingresso ja pago. */
 function ehAcompanhante(id: string): boolean {
@@ -391,6 +392,48 @@ export function computeMetrics(
     return inRange(row.date, filter.from, filter.to);
   });
 
+  // Na lista presencial, cada linha preenchida representa UMA pessoa.
+  // O tipo serve apenas para segmentar essa pessoa; "Ingresso Duplo" nao cria
+  // uma segunda pessoa automaticamente. O acompanhante so entra quando existir
+  // em outra linha (por exemplo, "CAD DE ...").
+  const matcherParticipantes = compileMatcher(config);
+  const contagemParticipantesPorTipo = new Map<string, number>();
+  const participantesNaoClassificados = new Map<string, { label: string; quantidade: number }>();
+
+  for (const row of participantesDaLista) {
+    const tipo = matchTicketKind(matcherParticipantes, row.rawTicketType);
+    if (tipo) {
+      contagemParticipantesPorTipo.set(
+        tipo,
+        (contagemParticipantesPorTipo.get(tipo) ?? 0) + 1,
+      );
+      continue;
+    }
+
+    const label = row.rawTicketType.trim() || 'Sem tipo informado';
+    const chave = label.toLocaleLowerCase('pt-BR');
+    const atual = participantesNaoClassificados.get(chave) ?? { label, quantidade: 0 };
+    atual.quantidade += 1;
+    participantesNaoClassificados.set(chave, atual);
+  }
+
+  const participantesPorTipo = [
+    ...config.ticketTypes
+      .map((tipo) => ({
+        id: tipo.id,
+        label: tipo.label,
+        quantidade: contagemParticipantesPorTipo.get(tipo.id) ?? 0,
+      }))
+      .filter((item) => item.quantidade > 0),
+    ...[...participantesNaoClassificados.values()]
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+      .map((item, indice) => ({
+        id: `outro-${indice + 1}`,
+        label: item.label,
+        quantidade: item.quantidade,
+      })),
+  ];
+
   const participantesPagantesDaLista = participantesDaLista.filter((row) => {
     const tipo = row.rawTicketType.trim().toLowerCase();
     if (!tipo) return false;
@@ -418,6 +461,7 @@ export function computeMetrics(
       participantes,
       participantesPagantes,
       valorParticipantesPagantes,
+      participantesPorTipo,
       custoPorLead,
       ingressos,
       embaixador: {
