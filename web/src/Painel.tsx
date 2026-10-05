@@ -93,6 +93,18 @@ export function Painel({ dados, selecao, linhaSelecionada, campanhas, campanhasS
           <Metrica rotulo="Participantes pagantes" valor={numero(m.participantesPagantes)} />
           <Metrica rotulo="Valor pago pelos pagantes" valor={dinheiro(m.valorParticipantesPagantes)} />
         </div>
+
+        {(m.participantesPorTipo ?? []).length > 0 && (
+          <div className="participantes-tipos">
+            <h3>Participantes por tipo</h3>
+            <p>Cada linha da lista presencial conta como uma pessoa.</p>
+            <div className="linhas">
+              {(m.participantesPorTipo ?? []).map((tipo) => (
+                <Item key={tipo.id} n={tipo.quantidade} t={tipo.label} />
+              ))}
+            </div>
+          </div>
+        )}
       </section>
       <div className="grade-detalhe">
         <section className="secao">
