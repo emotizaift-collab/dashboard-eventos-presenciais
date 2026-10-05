@@ -424,6 +424,22 @@ code.mono { font-family: inherit; background: var(--superficie); padding: 2px 7p
 }
 .participantes-grade .metrica { min-height: 96px; }
 
+.participantes-tipos {
+  margin-top: 4px;
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--divisoria);
+}
+.participantes-tipos h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.participantes-tipos > p {
+  margin: 0 0 12px;
+  color: var(--texto-fraco);
+  font-size: 12.5px;
+}
+
 .meta-evento {
   margin-top: 38px;
   padding-top: 26px;
